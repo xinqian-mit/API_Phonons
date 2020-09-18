@@ -4,7 +4,7 @@ xml_list_file="vaspruns_list.txt"
 config_type="NaCl_snaps300K"
 config_name_prefix="NaCl_snaps300K_"
 xyz_file="$config_type.xyz"
-vasp_scf_xmls_to_dbxyz="/home/proteus/Softwares/vaspxml_2_dbxyz/bin/Release/vaspxml_2_dbxyz"
+vasp_scf_xmls_to_dbxyz="./vaspxml_2_dbxyz"
 
 current_dir=$PWD
 
