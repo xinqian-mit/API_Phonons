@@ -1,4 +1,5 @@
 # API_Phonons
+----
 This is a API that interfaces ase, lammps, phonopy, alamode thirdorder.py and quippy for molecular simulation. Written
 by Xin Qian @ MIT.
 
