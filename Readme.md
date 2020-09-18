@@ -29,31 +29,31 @@ doesn't have this function anymore, but using bandplot requires phonopy installe
 
 In the folder scripts/, I provide several example files on how to use this package for phonon simulations:<br />
 
-##Dielectric_function_NaCl:<br />
+### Dielectric_function_NaCl:<br />
 I provided a soap based machine learning potential for NaCl. With the LD_quipGap_phonopy_NAC.py computes the 
 harmonic force constants (FC2), while thirorder_gap.py computes third order anharmonic force constants (FC3). The 
 usage of thirdorder_gap.py is the same as thirdorder_vasp.py for ShengBTE. The jupyter notebook script then computes and plots 
 the dielectric function. 
 <br />
-## Dispersion_Zr_hcp_gap:<br />
+### Dispersion_Zr_hcp_gap:<br />
 This is a fairly simple example for computing phonon dispersion of hcp-phase of Zr. With the jupyter-notebook script for
 plotting the energy and force by GAP potential vs DFT results, which are in the Zr_hcp_aimd300K_xyz iles.
 <br />
-## EIM_LattDyn_NaCl:<br />
+### EIM_LattDyn_NaCl:<br />
 This gives example how we can interface lammps and phonopy to perform lattice dynamics based on the EIM potential supported
 by lammps.
 <br />
-## SnapsDFT_FCs_ALM:<br />
+### SnapsDFT_FCs_ALM:<br />
 This example uses Alamode to compute force constants, based on DFT data of energy and forces of random snapshots
 The random snapshots are generated based on this paper: Phys. Rev. B 95, 014302, 2017 by Olle Hellman. 
 <br />
-## Tdep_potFCs_ALM:<br />
+### Tdep_potFCs_ALM:<br />
 This gives an example how to self-consistently compute second and thirdorder force constants. I first compute the FC2 and FC3
 use the finite displacement method, and obtain the first generation of eigenvectors. Then I used Hellman's method to compute
 the new set of FC2 and FC3, and a new set of eigenvectors. This process is iterated. Convergence of phonon bandstructure can
 usually be achieved after ~ 5 iterations. 
 <br />
-## Thermo_Disps_DFT and Thermo_Disps_Pot:<br />
+### Thermo_Disps_DFT and Thermo_Disps_Pot:<br />
 These two folders implemented the code to randomly generate snapshots, using the Hellman's method
-## Write_eigs:<br />
+### Write_eigs:<br />
 This output eigenvector files in the GULP format. 
