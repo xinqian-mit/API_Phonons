@@ -112,7 +112,7 @@ for Temperature in Temperatures:
             Scell_snaps.append(Scell_tmp)
             snaps_ase.append(api_qpv.phonopyAtoms_to_aseAtoms(Scell_tmp))
         
-        displacements,forces=api_qpv.get_DFSETS(Supercell,Scell_snaps,gp_xml_file)
+        displacements,forces=api_qpv.get_DFSETS_GAP(Supercell,Scell_snaps,gp_xml_file) # in API_phonopy_lammps, there's a corresponding get_DFSETS_lmp for empirical potential.
         #FC2=get_fc2(Supercell,phonon.get_primitive(),displacements,forces,log_level=1)
         FC2,FC3 = api_alm.get_fc2_fc3(phonon,displacements,forces,is_compact_fc=False,options=options,log_level=1)
         FC2Sum = FC2Sum + FC2

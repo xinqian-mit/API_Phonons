@@ -311,7 +311,7 @@ def write_unitcell_eigvecs_qmesh_gulp(filename,eigvecs,phonon_scell):
         
         
             
-def get_DFSETS(Scell0,Scell_snaps,gp_xml_file):
+def get_DFSETS_GAP(Scell0,Scell_snaps,gp_xml_file): 
     Nsnaps = len(Scell_snaps)
     pos0_frac = Scell0.get_scaled_positions()
     latt_vec = Scell0.get_cell()

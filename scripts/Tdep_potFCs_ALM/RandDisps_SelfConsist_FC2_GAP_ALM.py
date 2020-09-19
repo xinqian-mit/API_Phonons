@@ -97,7 +97,7 @@ for Temperature in Temperatures:
             Scell_snaps.append(Scell_tmp)
             snaps_ase.append(api_qpv.phonopyAtoms_to_aseAtoms(Scell_tmp))
         
-        displacements,forces=api_qpv.get_DFSETS(Supercell,Scell_snaps,gp_xml_file)
+        displacements,forces=api_qpv.get_DFSETS_GAP(Supercell,Scell_snaps,gp_xml_file)
         FC2=get_fc2(Supercell,phonon.get_primitive(),displacements,forces,log_level=1)
         FCSum = FCSum + FC2
         FCave = FCSum/(icalc+1)

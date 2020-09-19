@@ -109,6 +109,40 @@ def calc_lmp_force(cmds,Scell_ph,atomtypes='atomic',logfile='log.lammps'):
     return forces
 
 
+def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammps'): 
+    # Scell0 & Scell_snaps are phonopy atom objects. Scell0 is the unperturbated supercell,
+    # Scell_snaps are perturbated ones.
+    Nsnaps = len(Scell_snaps)
+    pos0_frac = Scell0.get_scaled_positions()
+    latt_vec = Scell0.get_cell()
+    displacements = np.zeros([Nsnaps,Scell0.get_number_of_atoms(),3])
+    forces = np.zeros([Nsnaps,Scell0.get_number_of_atoms(),3])
+    for i,scell in  enumerate(Scell_snaps):
+        #print(i)
+        pos_frac = scell.get_scaled_positions()
+        ur = pos_frac-pos0_frac
+        ui = np.zeros(pos_frac.shape)
+        fi = np.zeros(pos_frac.shape)
+        for iat in range(scell.get_number_of_atoms()):
+            for j in range(3): #periodic boundary condition, wrap the sscell vec
+                ujr = ur[iat][j]
+                if (np.abs(ujr)>np.abs(ujr+1)):
+                    ur[iat][j] = ujr+1
+                if (np.abs(ujr)>np.abs(ujr-1)):
+                    ur[iat][j] = ujr-1 
+            ui[iat][0]=ur[iat][0]*latt_vec[0][0]+ur[iat][1]*latt_vec[1][0]+ur[iat][2]*latt_vec[2][0] #get disps
+            ui[iat][1]=ur[iat][0]*latt_vec[0][1]+ur[iat][1]*latt_vec[1][1]+ur[iat][2]*latt_vec[2][1]
+            ui[iat][2]=ur[iat][0]*latt_vec[0][2]+ur[iat][1]*latt_vec[1][2]+ur[iat][2]*latt_vec[2][2]
+        scell_ase = phonopyAtoms_to_aseAtoms(scell)
+        fi = calc_lmp_force(cmds,scell_ase,atomtypes,logfile) # get forces
+        displacements[i][:][:]=ui
+        forces[i][:][:]=fi
+    
+    return displacements,forces
+
+
+#---------------------------------------------File io-------------------------------------------------------------#
+
 def write_lmp_data(filename,SimCell,molID=[]):
     Masses_of_atypes = np.unique(SimCell.get_masses())
     Number_of_atom_types = len(Masses_of_atypes)
