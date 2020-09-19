@@ -36,8 +36,7 @@ usage of thirdorder_gap.py is the same as thirdorder_vasp.py for ShengBTE. The j
 the dielectric function. 
 <br />
 ### Dispersion_Zr_hcp_gap:<br />
-This is a fairly simple example for computing phonon dispersion of hcp-phase of Zr. With the jupyter-notebook script for
-plotting the energy and force by GAP potential vs DFT results, which are in the Zr_hcp_aimd300K_xyz iles.
+This is a fairly simple example for computing phonon dispersion of hcp-phase of Zr.
 <br />
 ### EIM_LattDyn_NaCl:<br />
 This gives example how we can interface lammps and phonopy to perform lattice dynamics based on the EIM potential supported
