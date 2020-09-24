@@ -38,6 +38,11 @@ the dielectric function.
 ### Dispersion_Zr_hcp_gap:<br />
 This is a fairly simple example for computing phonon dispersion of hcp-phase of Zr.
 <br />
+
+### Tdep_bccZr:<br />
+This folder shows how temperature stablized phonon dispersion of bcc-Zr, which 
+is dynamically unstable at 0K. Also included a script for relaxing cell structures
+ 
 ### EIM_LattDyn_NaCl:<br />
 This gives example how we can interface lammps and phonopy to perform lattice dynamics based on the EIM potential supported
 by lammps.
