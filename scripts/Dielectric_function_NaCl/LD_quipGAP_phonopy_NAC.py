@@ -1,4 +1,5 @@
 import matplotlib
+matplotlib.use('agg') # This line is necessary for non-gui linux systems
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import numpy as np
