@@ -37,12 +37,13 @@ The python executable bandplot is used to export band.yaml files to text, new ve
 phonopy-bandplot by phonopy doesn't have this function anymore, but using bandplot requires 
 phonopy installed.
 
-When compiling lammps as python library, remember to do the following
-cd lib/python
-cp Makefile.lammps.python3 Makefile.lammps
-cd ../src
-make yes-python
-make foo
+When compiling lammps as python library, remember to do the following <br />
+cd lib/python<br />
+cp Makefile.lammps.python3 Makefile.lammps<br />
+cd ../src<br />
+make yes-python<br />
+make foo<br />
+<br />
 
 When installing thirorder.py, also remember to change the first line to #!/user/bin/env python3
 
