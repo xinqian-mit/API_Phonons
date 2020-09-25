@@ -10,6 +10,7 @@
 # 3. run phonopy -f ./vaspruns/*
 
 import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import numpy as np
