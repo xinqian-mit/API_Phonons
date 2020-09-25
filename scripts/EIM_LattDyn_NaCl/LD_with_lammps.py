@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
-
+import matplotlib
+matplotlib.use('agg')
 from ase.spacegroup import crystal
 from ase.visualize import view
 from ase.io import write
