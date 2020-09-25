@@ -1,10 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding: utf-8
 
 # In[1]:
 
 
 import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from matplotlib import rc
 import numpy as np
