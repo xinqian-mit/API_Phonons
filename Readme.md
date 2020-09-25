@@ -38,11 +38,12 @@ phonopy-bandplot by phonopy doesn't have this function anymore, but using bandpl
 phonopy installed.
 
 When compiling lammps as python library, remember to do the following <br />
+<br />
 cd lib/python<br />
 cp Makefile.lammps.python3 Makefile.lammps<br />
 cd ../src<br />
 make yes-python<br />
-make foo<br />
+make foo mode=shared<br />
 <br />
 
 When installing thirorder.py, also remember to change the first line to #!/user/bin/env python3
