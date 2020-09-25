@@ -1,16 +1,13 @@
 # API_Phonons
 ----
 This is a API that interfaces ase, lammps, phonopy, alamode thirdorder.py and quippy for molecular simulation. Written
-by Xin Qian @ MIT.
+by Xin Qian @ MIT. This package is developed to interface different phonon simulation tools, making it convenient to extract 
+force constants of any empirical or machine learning potentials, or from AIMD data. 
 
-To use this package, one needs to install phonoy, thirdorder.py lammps python interface, quippy and ALM. One could 
-check the tutorials for those packages on how to install them. 
-
-This package is written to interface different phonon simulation tools, making it convenient to extract force constants
-of any empirical or machine learning potentials, or from AIMD data. The API_*.py files contains functions for interfacing
-different packages, while in the directory script/, I provided examples for computing those different properties including
-harmonic/thirdorder force constants, or dielectric tensors. Utilizing Alamode, it can also self-consistently compute force
-constants renormalized at higher temperatures. 
+The API_*.py files contains functions for interfacing different packages, while in the directory script/, I provided examples 
+for computing those different properties including harmonic/thirdorder force constants, or dielectric tensors. 
+Utilizing Alamode, it can also self-consistently compute force constants renormalized at higher temperatures, which even works
+for dynamically unstable system with soft phonon modes. 
 
 ### Installation
 
