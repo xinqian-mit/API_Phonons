@@ -217,3 +217,34 @@ def write_lmp_dump(filename,Cell_snaps):
             atype = types[iat]+1
             fid.write('{} {} {:6f} {:6f} {:6f} {:6f} {:6f} {:6f}\n'.format(iat,atype,pos[iat][0],pos[iat][1],pos[iat][2],vel[iat][0],vel[iat][1],vel[iat][2]))
     fid.close()
+    
+# --------------------------- Computing transmisstion matrices for interfaces ------------------------------------#
+    
+def Compute_MAB_matrix_Gamma(FC2,eigs,molID,groupA,groupB):
+    """
+    This computes the energy exchange matrix between group A and group B
+    MAB(m,n) = Sum(i in A, j in B) [FC2(i,j,a,b)*eig(i,m,a)*eig(j,n,b)]
+    n,m are branch indices at Gamma point. 
+    """
+    
+    (Nmodes,Natms,DIM)=eigs.shape
+    #print(eigs.shape)
+    MAB = np.zeros([Nmodes,Nmodes])
+    
+    for i in range(Natms):
+        for j in range(i,Natms):
+            phi_ij = FC2[i,j,:,:]
+            phi_ji = phi_ij.transpose()
+            if (molID[i] == groupA and molID[j] == groupB) or (molID[i] == groupB and molID[j] == groupA):
+                for m in range(Nmodes):
+                    emi = np.real(eigs[m,i,:]) # eigs are real at Gamma point
+                    emj = np.real(eigs[m,j,:])
+                    for n in range(Nmodes):
+                        enj = np.real(eigs[n,j,:])
+                        eni = np.real(eigs[n,i,:])
+                        MAB[m,n] = MAB[m,n] + np.dot(np.matmul(emi,phi_ij),enj) + np.dot(np.matmul(emj,phi_ji),eni)
+    
+    return MAB
+                    
+            
+                    
