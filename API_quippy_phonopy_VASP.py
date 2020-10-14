@@ -17,6 +17,7 @@ import ase
 import multiprocessing as mp
 from joblib import Parallel, delayed
 import copy as cp
+from numba import njit 
 
 
 
@@ -348,12 +349,12 @@ def get_DFSETS_GAP(Scell0,Scell_snaps,gp_xml_file):
         
               
     
-        
+@njit         
 def Bose_factor(T,freq_THz):
     if T==0.0:
         return 0.0    
     if freq_THz <= 0:
-        freq_THz = np.max([1.0e-6,np.abs(freq_THz)]) # the absolute value is to consider imaginary (negative) modes.
+        freq_THz = np.amax(np.array([1.0e-6,np.abs(freq_THz)])) # the absolute value is to consider imaginary (negative) modes.
     exp_factor=np.exp(Units.Hbar*freq_THz*2.0*pi*1.0e12/(Units.Kb*T))
     n=1./(exp_factor-1.0)
 
@@ -361,17 +362,17 @@ def Bose_factor(T,freq_THz):
         n = 0.0
     return n
     
-
+@njit 
 def calc_Amp_displacement(T,freq_THz,mass):
     if freq_THz <= 0:
-        freq_THz = np.max([1.0e-6,np.abs(freq_THz)])
+        freq_THz = np.amax(np.array([1.0e-6,np.abs(freq_THz)]))
     n = Bose_factor(T,freq_THz)
     scale2m2 = Units.EV/(0.001/Units.Avogadro*2.0*pi*1.0e12)    
     Amp = np.sqrt(scale2m2*Units.Hbar*(2.0*n+1.)/2.0/mass/freq_THz)/Units.Angstrom
     if freq_THz < 0.5: # get rid of too large amplitudes...
         Amp = 0.0    
     return Amp
-    
+@njit     
 def calc_Amp_displacement_classic(T,freq_THz,mass):
     kBT=Units.Kb*T*Units.EV # J = kg*m2/s2
     m = mass*0.001/Units.Avogadro # kg   
@@ -480,7 +481,7 @@ def snapshot_along_eig(phonon_scell,T):
                     print(i,s) 
     return u_disps.real,v_disps.real
     
-            
+@njit           
 def disp_atom_along_eigvec(T,freq_THz,mass,eigvec):
     Amps_si = calc_Amp_displacement(T,freq_THz,mass)
     xi1 = np.random.random_sample()
