@@ -245,6 +245,6 @@ def Compute_MAB_matrix_Gamma(FC2,eigs,molID,groupA,groupB):
                         MAB[m,n] = MAB[m,n] + np.dot(np.matmul(emi,phi_ij),enj) + np.dot(np.matmul(emj,phi_ji),eni)
     
     return MAB
-                    
+
             
                     
