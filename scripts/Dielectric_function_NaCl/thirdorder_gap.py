@@ -62,7 +62,7 @@ if __name__ == "__main__":
     namepattern = "3RD.POSCAR.{{0:0{0}d}}".format(width)
 
 # generate snapshots to calc FC3 and convert to quippy atom objects.
-    Scells = []
+    
     phipart = np.zeros((3, nirred, ntot))
     p = FC3.build_unpermutation(sposcar)
     for i, e in enumerate(list4):
@@ -76,7 +76,6 @@ if __name__ == "__main__":
             filename = namepattern.format(number)
             FC3.write_POSCAR(dsposcar, filename)
             Scell = Intf_vasp.read_vasp(filename)
-            Scells.append(Scell)
             os.remove(filename)
         #print number
             Scell_quip = api_qpv.phonopyAtoms_to_aseAtoms(Scell)
