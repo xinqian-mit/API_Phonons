@@ -30,7 +30,7 @@ nacl = crystal(['Na', 'Cl'], [(0, 0, 0), (0.5, 0.5, 0.5)], spacegroup=225,
 
 
 d0 = a/2.0;
-d_gap = 5-d0  # Angstrom, distance of the gap
+d_gap = 0  # Angstrom, distance of the gap
 d_vac = 60
 Stacking_Period = 2 # Period of stacking. In (111) stacking, the layer # is 6. In (110) stacking, the layer # is 4
 Nrepeat = (2,3,4) # for lattice dynamics on the unit cell.
