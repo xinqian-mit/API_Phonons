@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8
 # usage:
-# thirdorder_gap na nb nc cutoff( -i|nm ) n_processes "directory/gp_new.xml"
+# python3 thirdorder_gap_mp.py na nb nc cutoff( -i|nm ) n_processes "directory/gp_new.xml"
 import numpy as np
 import API_quippy_thirdorder as FC3
 import thirdorder_core
@@ -19,8 +19,8 @@ import multiprocessing as mp
 
 
  
-def calc_phipart(i,e,nirred,ntot,p,gp_xml_file,sposcar,namepattern,phipart):
-    phi_i = np.zeros([3,ntot])
+def calc_phipart(i,e,nirred,ntot,p,gp_xml_file,sposcar,namepattern):
+    phi_i = np.zeros([3,ntot],dtype='float64')
     for n in range(4): 
         isign = (-1)**(n // 2)
         jsign = -(-1)**(n % 2)
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         if frange == 0.:
             sys.exit("Error: invalid cutoff")
             
-    Nprocesses = sys.argv[5]
+    Nprocesses = int(sys.argv[5])
 
     gp_xml_file=sys.argv[6]
     
@@ -89,21 +89,20 @@ if __name__ == "__main__":
 
 # generate snapshots to calc FC3 and convert to quippy atom objects.
     
-    global phipart 
-    phipart = np.zeros([3, nirred, ntot])
-    print(phipart.dtype)
+    #global phipart 
+    phipart = np.zeros([3, nirred, ntot],dtype='float64')
+    
     p = FC3.build_unpermutation(sposcar)
     
-    pool = mp.Pool(processes=2)
+    pool = mp.Pool(processes=Nprocesses)
     
     results = []
     for i, e in enumerate(list4):
-        results.append(pool.apply_async(calc_phipart,(i,e,nirred,ntot,p,gp_xml_file,sposcar,namepattern,phipart)))
+        results.append(pool.apply_async(calc_phipart,(i,e,nirred,ntot,p,gp_xml_file,sposcar,namepattern)))
      
     pool.close()
     pool.join()
 
-    # Ensure all of the processes have finished
     for i,result in enumerate(results):
         phipart[:,i,:]=result.get()    
         
