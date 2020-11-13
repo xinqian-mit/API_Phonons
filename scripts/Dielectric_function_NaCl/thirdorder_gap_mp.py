@@ -15,8 +15,8 @@ import os, glob
 import os.path
 import shutil
 import sys
-import multiprocessing as mp
-
+#import multiprocessing as mp
+import pymp
 
  
 def calc_phipart(i,e,nirred,ntot,p,gp_xml_file,sposcar,namepattern):
@@ -36,6 +36,7 @@ def calc_phipart(i,e,nirred,ntot,p,gp_xml_file,sposcar,namepattern):
         Scell_quip = api_qpv.phonopyAtoms_to_aseAtoms(Scell)
         force = np.array(api_qpv.calc_force_GAP(gp_xml_file,Scell_quip))  
         phi_i -= (isign * jsign * force[p, :].T) # put the result in a queue object, which will be retrieved by get
+    #phipart[:,i,:] = phi_i
     return phi_i
 
     
@@ -90,21 +91,17 @@ if __name__ == "__main__":
 # generate snapshots to calc FC3 and convert to quippy atom objects.
     
     #global phipart 
-    phipart = np.zeros([3, nirred, ntot],dtype='float64')
+    phipart = pymp.shared.array((3, nirred, ntot),dtype='float64') #np.zeros([3, nirred, ntot],dtype='float64')
     
     p = FC3.build_unpermutation(sposcar)
     
-    pool = mp.Pool(processes=Nprocesses)
+    #pool = mp.Pool(processes=Nprocesses)
     
-    results = []
-    for i, e in enumerate(list4):
-        results.append(pool.apply_async(calc_phipart,(i,e,nirred,ntot,p,gp_xml_file,sposcar,namepattern)))
-     
-    pool.close()
-    pool.join()
+    with pymp.Parallel(Nprocesses) as parap:
+        for i in parap.range(nirred):
+            e = list4[i]
+            phipart[:,i,:] = calc_phipart(i,e,nirred,ntot,p,gp_xml_file,sposcar,namepattern)
 
-    for i,result in enumerate(results):
-        phipart[:,i,:]=result.get()    
         
     phipart /= (400. * thirdorder_common.H * thirdorder_common.H)
     phifull = thirdorder_core.reconstruct_ifcs(phipart, wedge, list4,poscar, sposcar)
