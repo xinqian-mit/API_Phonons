@@ -56,6 +56,7 @@ if __name__ == "__main__":
 # looking for irreducible fc3
     wedge = thirdorder_core.Wedge(poscar, sposcar, symops, dmin, nequi, shifts,frange)
     list4 = wedge.build_list4()
+    print(list4)
     nirred = len(list4)
     nruns = 4 * nirred
     width = len(str(4 * (len(list4) + 1)))
@@ -82,7 +83,7 @@ if __name__ == "__main__":
             force = np.array(api_qpv.calc_force_GAP(gp_xml_file,Scell_quip))
             phipart[:, i, :] -= isign * jsign * force[p, :].T   
      
-    phipart /= (400. * thirdorder_common.H * thirdorder_common.H)
+    phipart =  phipart/(400. * thirdorder_common.H * thirdorder_common.H)
     phifull = thirdorder_core.reconstruct_ifcs(phipart, wedge, list4,poscar, sposcar)
     thirdorder_common.write_ifcs(phifull, poscar, sposcar, dmin, nequi, shifts, frange,"FORCE_CONSTANTS_3RD")
 

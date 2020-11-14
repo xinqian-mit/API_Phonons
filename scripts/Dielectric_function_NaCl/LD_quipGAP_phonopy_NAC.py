@@ -15,8 +15,8 @@ plt.rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
-#gp_xml_file= "./soap_n12l11_6.0cut_coul/gp_NaCl_soap_coul.xml"
-gp_xml_file= "/home/proteus/Softwares/Pot_NaCl/gp_NaCl_soap_coul.xml"
+gp_xml_file= "./soap_n12l11_6.0cut_coul/gp_NaCl_soap_coul.xml"
+#gp_xml_file= "/home/proteus/Softwares/Pot_NaCl/gp_NaCl_soap_coul.xml"
 Qpoints=np.array([[0.0001,0.0001,1.0],[0.5,0.5,1.0],[3./8,3./8,3./4],[0.0,0.0,0.0],[0.5,0.5,0.5]])
 band_labels=['$\Gamma$','X','K','$\Gamma$','L']
 #Qpoints = np.array([[0.5,0.0,0.0],[0,0,0],[2./3,1./3,0.0]])
@@ -77,4 +77,4 @@ bs_plt.xlabel("")
 bs_plt.ylabel("Frequency (THz)",fontsize=16)
 bs_plt.xticks(fontsize=16)
 bs_plt.yticks(fontsize=16)
-bs_plt.savefig("Bandstructure.png",dpi=300,bbox_inches='tight')
+bs_plt.savefig("Bands_quip.png",dpi=300,bbox_inches='tight')
