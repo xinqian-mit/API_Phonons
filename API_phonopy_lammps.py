@@ -12,7 +12,7 @@ import ase.io as io
 from matscipy.neighbours import neighbour_list
 import ase
 import multiprocessing as mp
-from joblib import Parallel, delayed  
+#from joblib import Parallel, delayed  
 import copy as cp
 import API_quippy_phonopy_VASP as api_qpv
 

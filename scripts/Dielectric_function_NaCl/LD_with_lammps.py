@@ -37,10 +37,10 @@ cmds = [
 "neigh_modify one 8000",
 "set type 1 charge 1.08559", #1.08559
 "set type 2 charge -1.08559",
-"pair_style	hybrid/overlay quip coul/long 10.0",
+"pair_style    hybrid/overlay quip coul/long 10.0",
 #"pair_style	born/coul/dsf 0.25 10.0",
-"pair_coeff	* * quip ./soap_n12l11_6.0cut_coul/gp_NaCl_soap_Nocoul.xml \"Potential xml_label=GAP_2019_9_16_-360_7_11_25_660\" 11 17",
-"pair_coeff     * * coul/long",
+"pair_coeff    * * quip ./soap_n12l11_6.0cut_coul/gp_NaCl_soap_Nocoul.xml \"Potential xml_label=GAP_2019_9_16_-360_7_11_25_660\" 11 17",
+"pair_coeff    * * coul/long",
 #"pair_coeff	1 1 born 0.263690403 0.3170  2.340  1.04852774712 -0.499194856",
 #"pair_coeff	1 2 born 0.210917632 0.3170  2.755  6.99018498080 -8.673510623",
 #"pair_coeff	2 2 born 0.158231587 0.3170  3.170  72.3983444440 -145.39050181",
