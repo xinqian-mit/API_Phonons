@@ -15,7 +15,7 @@ from matscipy.neighbours import neighbour_list
 #from quippy.units import BOHR, HARTREE, PI
 import ase
 import multiprocessing as mp
-from joblib import Parallel, delayed
+#from joblib import Parallel, delayed
 import copy as cp
 from numba import njit 
 
@@ -100,23 +100,6 @@ def calc_force_sets_GAP(gp_xml_file,Scell_quippy):
         force_gap_scells.append(np.array(force_gap).transpose().tolist())
     #print(force_gap_scells)
     return force_gap_scells
-
-def Parallel_calc_force_sets_GAP(gp_xml_file,Scell_quippy):
-    """
-    This function is used to produce force constants from GAP potential.
-    The list contains: 
-    [[[f1x,f1y,f1z],[f2x,f2y,f2z],...,[fNx,fNy,fNz]]# forces of each atom in the 1st displaced supercell
-     [[f1x,f1y,f1z],[f2x,f2y,f2z],...,[fNx,fNy,fNz]]# forces of each atom in the 2nd displaced supercell
-     ...
-    ]
-    """
-    #pool = mp.Pool(mp.cpu_count())
-    #force_gap_scells=[]
-    #force_gap_scells = [pool.apply(calc_force_GAP, args=(gp_xml_file,scell)) for scell in Scell_quippy]
-    force_gap_scells = Parallel(n_jobs=mp.cpu_count())(delayed(calc_force_GAP)(gp_xml_file,scell) for scell in Scell_quippy) 
-    return force_gap_scells 
-
-
 
 
 def calc_energy_force_GAP(gp_xml_file,scell):
