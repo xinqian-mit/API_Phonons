@@ -30,8 +30,7 @@ To have proper plot of phonon bandstructures, it's also recommended to install l
 For ubuntu just do "apt-get install texlive-latex-recommended". 
 
 Other python libraries include: 
-joblib # For some parallelization
-matscipy 
+matscipy <br />
 numba # This save you from implementing the code in C. If a function is calld many time, jit it.
 
 The python executable bandplot is used to export band.yaml files to text, new version of 
