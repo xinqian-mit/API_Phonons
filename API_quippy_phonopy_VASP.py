@@ -95,29 +95,34 @@ def calc_force_sets_GAP(gp_xml_file,Scell_quippy):
     
     force_gap_scells=[]
     for i,scell in enumerate(Scell_quippy):
-        #print (np.sum(pot.get_energies(scell)))
-        pot.calculate(scell,forces=force_gap)  # use calculate for new gap.
-        force_gap_scells.append(np.array(force_gap).transpose().tolist())
+        
+        #pot.calculate(scell,forces=force_gap)  # use calculate for new gap.
+        #force_gap_scells.append(np.array(force_gap).transpose().tolist())
+        scell.set_calculator(pot)
+        force_gap_scells.append(scell.get_forces().tolist())
     #print(force_gap_scells)
     return force_gap_scells
 
 
 def calc_energy_force_GAP(gp_xml_file,scell):
     #scell need to be a quippy object.
-    energy_gap = np.array(0.0,order='F')
-    force_gap=np.zeros(scell.get_positions().transpose().shape,order='F')
+    #energy_gap = np.array(0.0,order='F')
+    #force_gap=np.zeros(scell.get_positions().transpose().shape,order='F')
     pot = quippy.potential.Potential(param_filename=gp_xml_file)
-    pot.calculate(scell,forces=force_gap)
-    energy_gap = np.sum(pot.get_energies(scell))
-    F_gap = np.array(force_gap).transpose().tolist()
+    #pot.calculate(scell,forces=force_gap)
+    scell.set_calculator(pot)
+    F_gap = scell.get_forces()
+    energy_gap = scell.get_potential_energy()
+    #F_gap = np.array(force_gap).transpose().tolist()
     return energy_gap.tolist(),F_gap
 
 def calc_force_GAP(gp_xml_file,scell):
     #scell need to be a quippy object.
-    force_gap=np.zeros(scell.get_positions().transpose().shape,order='F')
+    #force_gap=np.zeros(scell.get_positions().transpose().shape,order='F')
     pot = quippy.potential.Potential(param_filename=gp_xml_file)
-    pot.calculate(scell,forces=force_gap)
-    F_gap = np.array(force_gap).transpose().tolist()
+    #pot.calculate(scell,forces=force_gap)
+    scell.set_calculator(pot)
+    F_gap = scell.get_forces().tolist()
     return F_gap
 
 def calc_force_quip(pot_flag,scell,file_pot=None,param_str=None):
@@ -167,8 +172,11 @@ def calc_energy_sets_GAP(gp_xml_file,Scell_quippy):
     
     energies=[]
     for scell in Scell_quippy:
-        energy_gap=np.sum(pot.get_energies(scell))
-        energies.append(energy_gap.tolist())
+        scell.set_calculator(pot)
+        energy_gap = scell.get_potential_energy()
+        energies.append(energy_gap)
+        #energy_gap=np.sum(pot.get_energies(scell))
+        #energies.append(energy_gap.tolist())
     
     return energies
 
