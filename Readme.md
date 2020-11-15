@@ -3,11 +3,15 @@
 This is a API that interfaces ase, lammps, phonopy, alamode thirdorder.py and quippy for molecular simulation, written
 by Xin Qian @ MIT. This package is developed to make it easy to extract  force constants and phononic properties of any 
 empirical or machine learning potentials, or directly from AIMD data. 
-
+<br />
 The API_*.py files contains functions for interfacing different packages, while in the directory script/, I provided examples 
 for computing those different properties including harmonic/thirdorder force constants, or dielectric tensors. 
 Utilizing Alamode, it can also self-consistently compute force constants renormalized at higher temperatures, which even works
 for dynamically unstable system with soft phonon modes. 
+<br />
+If you find this package useful, please cite one of the following papers: <br /> 
+Xin Qian and Ronggui Yang, Phys. Rev. B 98, 224108 (2018) <br />
+Xin Qian, Shenyou Peng, Xiaobo Li, Yujie Wei, Ronggui Yang, Materials Today Physics 10, 100140 (2019) <br />
 
 ### Installation
 
@@ -31,7 +35,8 @@ For ubuntu just do "apt-get install texlive-latex-recommended".
 
 Other python libraries include: 
 matscipy <br />
-numba # This save you from implementing the code in C. If a function is calld many time, jit it.
+numba # This save you from implementing the code in cython. When a function is called many times,
+I add the decorator @njit for just-in-time compilation, which would increase the speed.  
 
 The python executable bandplot is used to export band.yaml files to text, new version of 
 phonopy-bandplot by phonopy doesn't have this function anymore, but using bandplot requires 
@@ -55,8 +60,17 @@ In the folder scripts/, I provide several example files on how to use this packa
 #### Dielectric_function_NaCl:<br />
 I provided a soap based machine learning potential for NaCl. With the LD_quipGap_phonopy_NAC.py computes the 
 harmonic force constants (FC2), while thirorder_gap.py computes third order anharmonic force constants (FC3). The 
-usage of thirdorder_gap.py is the same as thirdorder_vasp.py for ShengBTE. The jupyter notebook script then computes and plots 
-the dielectric function. 
+usage of thirdorder_gap.py is the same as thirdorder_vasp.py for ShengBTE, execute with <br />
+<br />
+python3 thirdorder_gap.py na nb nc cutoff(nm)|-n <directory of GAP potential file> <br />
+<br />
+where na nb and nc are the supercell dimensions, followed by cutoff radius or -n where -n is the number of nearest
+neighbors. There are also parallelized scripts for fc3 calculation such as thirdorder_gap_mp.py, compute with:<br />
+<br />
+python3 thirdorder_gap_mp.py na nb nc cutoff(nm)|-n Nprocesses <directory of GAP potential file> <br />
+<br />
+The jupyter notebook script then computes the dielectric function.  
+for perturbated snapshots. 
 <br />
 #### Dispersion_Zr_hcp_gap:<br />
 This is a fairly simple example for computing phonon dispersion of hcp-phase of Zr.
@@ -83,7 +97,8 @@ the new set of FC2 and FC3, and a new set of eigenvectors. This process is itera
 usually be achieved after ~ 5 iterations. 
 <br />
 #### Thermo_Disps_DFT and Thermo_Disps_Pot:<br />
-These two folders implemented the code to randomly generate snapshots, using the Hellman's method
+These two folders implemented the code to randomly generate snapshots, using the Olle Hellman's stochastic method, which can be
+used as training datasets for TDEP, similar to AIMD snapshots.
 <br />
 #### Write_eigs:<br />
 This output eigenvector files in the GULP format. 
