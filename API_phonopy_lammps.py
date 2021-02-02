@@ -143,13 +143,19 @@ def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammp
 
 #---------------------------------------------File io-------------------------------------------------------------#
 
-def write_lmp_data(filename,SimCell,molID=[]):
+def write_lmp_data(filename,SimCell,molID=[],writeR0=False):
     Masses_of_atypes = np.unique(SimCell.get_masses())
     Number_of_atom_types = len(Masses_of_atypes)
     Masses = SimCell.get_masses()
     Pos = SimCell.get_positions()
 
     fid = open(filename,'w')
+    
+    if writeR0:
+        fid2 = open(filename+'.R0','w');
+        fid2.write('{}\n'.format(SimCell.get_global_number_of_atoms()))
+    
+    
     fid.write('LAMMPS data file. \n')
     fid.write('\n')
     fid.write('    {} atoms\n'.format(SimCell.get_global_number_of_atoms()))
@@ -177,6 +183,8 @@ def write_lmp_data(filename,SimCell,molID=[]):
                 if Masses[iat] == Masses_of_atypes[atype]:
                     tag = atype+1
             fid.write('{}   {}  {:6f}    {:9f}    {:9f}     {:9f} \n'.format(iat+1,tag,0.0,Pos[iat][0],Pos[iat][1],Pos[iat][2]))
+            if writeR0:
+                fi2.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],0,0,0,iat+1,tag))
         fid.write('\n')
         
     else:
@@ -189,7 +197,22 @@ def write_lmp_data(filename,SimCell,molID=[]):
             fid.write('{}   {}   {}  {:6f}    {:9f}    {:9f}     {:9f} \n'.format(iat+1,molID[iat],tag,0.0,Pos[iat][0],Pos[iat][1],Pos[iat][2]))
         fid.write('\n')   
 
-    fid.close()    
+    fid.close()
+    
+    
+
+
+def write_R0_Gamma(SimCell,filename):
+    Natoms = SimCell.get_global_number_of_atoms()
+    Pos = SimCell.get_positions()
+    fid = open(filename,'w')
+    
+    for iat in range(Natoms):
+        fid.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],0,0,0,iat+1))
+    fid.close()
+
+
+
 
 def write_lmp_dump(filename,Cell_snaps):
     fid = open(filename,'w')
