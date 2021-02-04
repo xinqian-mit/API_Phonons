@@ -19,6 +19,7 @@ import API_quippy_phonopy_VASP as api_qpv
 ## ------------------------------------- Get Lammps box parameters -----------------------------------------------------##
 
 
+
 def get_lmp_boxbounds(Scell):
     vec_lo = Scell.get_celldisp()
     xlo = vec_lo[0][0]; ylo = vec_lo[1][0]; zlo = vec_lo[2][0];
@@ -142,6 +143,15 @@ def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammp
 
 
 #---------------------------------------------File io-------------------------------------------------------------#
+def read_lmp_data(in_file,Z_of_type):
+    cell0 = io.read(in_file,format='lammps-data')
+    Atom_No = cell0.get_atomic_numbers()
+    for (i,Z) in enumerate(Z_of_type):
+        iaty = i+1
+        Atom_No[Atom_No==iaty]=Z
+    cell0.set_atomic_numbers(Atom_No)
+    return cell0
+
 
 def write_lmp_data(filename,SimCell,molID=[],writeR0=False):
     Masses_of_atypes = np.unique(SimCell.get_masses())
@@ -184,7 +194,7 @@ def write_lmp_data(filename,SimCell,molID=[],writeR0=False):
                     tag = atype+1
             fid.write('{}   {}  {:6f}    {:9f}    {:9f}     {:9f} \n'.format(iat+1,tag,0.0,Pos[iat][0],Pos[iat][1],Pos[iat][2]))
             if writeR0:
-                fi2.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],0,0,0,iat+1,tag))
+                fid2.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],0,0,0,iat+1,tag))
         fid.write('\n')
         
     else:
@@ -195,21 +205,13 @@ def write_lmp_data(filename,SimCell,molID=[],writeR0=False):
                 if Masses[iat] == Masses_of_atypes[atype]:
                     tag = atype+1
             fid.write('{}   {}   {}  {:6f}    {:9f}    {:9f}     {:9f} \n'.format(iat+1,molID[iat],tag,0.0,Pos[iat][0],Pos[iat][1],Pos[iat][2]))
+            if writeR0:
+                fid2.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],0,0,0,iat+1,tag))            
         fid.write('\n')   
 
     fid.close()
-    
-    
-
-
-def write_R0_Gamma(SimCell,filename):
-    Natoms = SimCell.get_global_number_of_atoms()
-    Pos = SimCell.get_positions()
-    fid = open(filename,'w')
-    
-    for iat in range(Natoms):
-        fid.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],0,0,0,iat+1))
-    fid.close()
+    if writeR0:
+        fid2.close()
 
 
 
