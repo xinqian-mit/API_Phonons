@@ -14,7 +14,6 @@ from phonopy import Phonopy
 import phonopy.file_IO as PhonIO
 from phonopy.interface.calculator import get_default_physical_units
 import copy as cp
-from joblib import Parallel, delayed
 import multiprocessing as mp
 
 a = 5.65414946767
@@ -27,8 +26,7 @@ prim = [[0, 0.5, 0.5],[0.5, 0, 0.5],[0.5, 0.5, 0]]
 nacl = crystal(['Na', 'Cl'], [(0, 0, 0), (0.5, 0.5, 0.5)], spacegroup=225,
                cellpar=[a, a, a, 90, 90, 90])
 
-ucell_ph = api_qpv.aseAtoms_to_phonopyAtoms(nacl)
-phonon = Phonopy(ucell_ph,np.diag(Nrepeat),primitive_matrix=prim)
+phonon = Phonopy(nacl,np.diag(Nrepeat),primitive_matrix=prim)
 phonon.generate_displacements(distance=0.03) # vasp
 Scell0 = api_qpv.phonopyAtoms_to_aseAtoms(phonon.get_supercell())
 

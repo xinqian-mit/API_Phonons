@@ -214,6 +214,36 @@ def write_lmp_data(filename,SimCell,molID=[],writeR0=False):
         fid2.close()
 
 
+def write_R0(prefix,pcell,scell): # phonopy style R0.
+    """ 
+    Input objects are prim and supcer cells as phonopy objects.
+    """
+    Nrepeat = scell.get_supercell_matrix().diagonal()
+    fid = open(prefix+'.R0','w')
+    
+    Nbasis = pcell.get_number_of_atoms()
+    Z_basis = pcell.get_atomic_numbers()
+    Z_type = np.unique(Z_basis)
+    N_types = len(Z_type)
+    
+    Pos = scell.get_scaled_positions()
+    Natoms = scell.get_number_of_atoms()
+    
+    fid.write('{}\n'.format(Natoms))
+    
+    iat = 0
+    list_basis = np.arange(Nbasis)
+    for ityp in range(N_types):
+        for ib in list_basis[Z_basis==Z_type[ityp]]:
+            for iz in range(Nrepeat[2]):
+                for iy in range(Nrepeat[1]):
+                    for ix in range(Nrepeat[0]):
+                        fid.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],ix,iy,iz,ib+1))
+                        iat += 1
+                        
+    fid.close()
+                        
+        
 
 
 def write_lmp_dump(filename,Cell_snaps):
