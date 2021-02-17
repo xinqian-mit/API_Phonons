@@ -134,7 +134,7 @@ def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammp
             ui[iat][0]=ur[iat][0]*latt_vec[0][0]+ur[iat][1]*latt_vec[1][0]+ur[iat][2]*latt_vec[2][0] #get disps
             ui[iat][1]=ur[iat][0]*latt_vec[0][1]+ur[iat][1]*latt_vec[1][1]+ur[iat][2]*latt_vec[2][1]
             ui[iat][2]=ur[iat][0]*latt_vec[0][2]+ur[iat][1]*latt_vec[1][2]+ur[iat][2]*latt_vec[2][2]
-        scell_ase = phonopyAtoms_to_aseAtoms(scell)
+        scell_ase = api_qpv.phonopyAtoms_to_aseAtoms(scell)
         fi = calc_lmp_force(cmds,scell_ase,atomtypes,logfile) # get forces
         displacements[i][:][:]=ui
         forces[i][:][:]=fi
@@ -238,7 +238,7 @@ def write_R0(prefix,pcell,scell): # phonopy style R0.
             for iz in range(Nrepeat[2]):
                 for iy in range(Nrepeat[1]):
                     for ix in range(Nrepeat[0]):
-                        fid.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],ix,iy,iz,ib+1))
+                        fid.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],ix,iy,iz,ib+1,ityp+1))
                         iat += 1
                         
     fid.close()
