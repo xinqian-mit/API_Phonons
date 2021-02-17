@@ -11,13 +11,13 @@ Ndump=2500000; % length of trajectory dumping
 
 Nks_per_job=24;
 
-Nk=4;
+Nk=10;
 Nbrch=3*nbasis;
 info_prefix=['CONTROL_job'];
 sufix='.in';
-R0_file='NaCl_333.R0';
+R0_file='NaCl_444.R0';
 R_vel_file='../R_vel.dat';
-eig_file='NaCl-qmesh3x3x3-irred.eig';
+eig_file='NaCl-qmesh4x4x4-irred.eig';
 str='%s\n';
 PARTITION='normal';
 proj_account = 'TG-PHY200027';
