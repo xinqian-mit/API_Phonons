@@ -373,7 +373,7 @@ def calc_Amp_displacement_classic(T,freq_THz,mass):
         Amp = 0.0
     return Amp
     
-def thermo_disp_along_eig(phonon_scell,T,Nsnapshots):  
+def thermo_disp_along_eig(phonon_scell,T,Nsnapshots,if_classic=False):  
     eigvecs = get_reshaped_eigvecs(phonon_scell) # eigvecs are reshaped.
     Eps_qpoints = eigvecs [0] # the first index is for list, the index for BZ-path
     Eps_array = Eps_qpoints[0]  # the second index is q-points on the BZ-path 
@@ -398,20 +398,20 @@ def thermo_disp_along_eig(phonon_scell,T,Nsnapshots):
                 for i,eps_si in enumerate(eps_s): # eps_si is the eigvec on atom i of the mode s
                     mass = masses[i]
                     #(i)
-                    uis,vis = disp_atom_along_eigvec(T,freq_THz,mass,eps_si)
+                    uis,vis = disp_atom_along_eigvec(T,freq_THz,mass,eps_si,if_classic)
                     u_disps[iconfig][i] += uis
                     if np.linalg.norm(uis)>1:
                         print(i,s)          
     return u_disps.real
 
-def Parallel_thermo_dispVel_along_eig(phonon_scell,T,Nsnapshots):
+def Parallel_thermo_dispVel_along_eig(phonon_scell,T,Nsnapshots,if_classic=False):
     """
     This function parallely generate snapshot with thermo displacements with velocites associated.
     thermo_disp_along_eig doesn't associated with velocity, and it's serial.
     """
     #pool = mp.Pool(mp.cpu_count())
     #force_gap_scells = [pool.apply(snapshot_along_eig, args=(phonon_scell,T)) for iconfig in range(Nsnapshots)]
-    uivi = Parallel(n_jobs=mp.cpu_count())(delayed(snapshot_along_eig)(phonon_scell,T) for iconfig in range(Nsnapshots))
+    uivi = Parallel(n_jobs=mp.cpu_count())(delayed(snapshot_along_eig)(phonon_scell,T,if_classic) for iconfig in range(Nsnapshots))
     uivi = np.array(uivi)
     ui = uivi[:,0,:,:]
     vi = uivi[:,1,:,:]
@@ -444,7 +444,7 @@ def Supercell_snap_with_disp(Scell_ph,u_disp,v_disp):
     Scell_disp.set_velocities(v_disp)
     return Scell_disp
 
-def snapshot_along_eig(phonon_scell,T):
+def snapshot_along_eig(phonon_scell,T,if_classic=False):
     eigvecs = get_reshaped_eigvecs(phonon_scell) # eigvecs are reshaped.
     Eps_qpoints = eigvecs [0] # the first index is for list, the index for BZ-path
     Eps_array = Eps_qpoints[0]  # the second index is q-points on the BZ-path 
@@ -465,7 +465,7 @@ def snapshot_along_eig(phonon_scell,T):
         if s>2:
             for i,eps_si in enumerate(eps_s): # eps_si is the eigvec on atom i of the mode s
                 mass = masses[i]
-                uis,vis = disp_atom_along_eigvec(T,freq_THz,mass,eps_si)
+                uis,vis = disp_atom_along_eigvec(T,freq_THz,mass,eps_si,if_classic)
                 u_disps[i] += uis
                 v_disps[i] += vis
                 if np.linalg.norm(uis)>1:
@@ -473,8 +473,12 @@ def snapshot_along_eig(phonon_scell,T):
     return u_disps.real,v_disps.real
     
 @njit           
-def disp_atom_along_eigvec(T,freq_THz,mass,eigvec):
-    Amps_si = calc_Amp_displacement(T,freq_THz,mass)
+def disp_atom_along_eigvec(T,freq_THz,mass,eigvec,if_classic=False):
+    if if_classic:
+        Amps_si = calc_Amp_displacement_classic(T,freq_THz,mass)
+    else:
+        Amps_si = calc_Amp_displacement(T,freq_THz,mass)
+                                                
     xi1 = np.random.random_sample()
     xi2 = np.random.random_sample()
     uis = eigvec*Amps_si*np.sqrt(-2.0*np.log(xi1))*np.sin(2.0*pi*xi2) # in Angstroms

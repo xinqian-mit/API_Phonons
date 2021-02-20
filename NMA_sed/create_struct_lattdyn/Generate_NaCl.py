@@ -24,7 +24,7 @@ a = 5.63095072418881 #5.65414946767 # lattice constant of NaCl
 nacl = crystal(['Na', 'Cl'], [(0, 0, 0), (0.5, 0.5, 0.5)], spacegroup=225,
                cellpar=[a, a, a, 90, 90, 90])
 
-Nrepeat = [3,3,3]
+Nrepeat = [4,4,4]
 ph = Phonopy(nacl,np.diag(Nrepeat),primitive_matrix=np.eye(3)) 
 Cell = api_qpv.phonopyAtoms_to_aseAtoms(ph.get_supercell()) # I always use phonopy's supcercell module. 
 
