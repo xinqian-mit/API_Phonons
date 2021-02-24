@@ -64,16 +64,19 @@ def get_lmp_boxbounds(Scell):
 
 
 
-def calc_lmp_force_sets(cmds,Scells_ph,atomtypes='atomic',logfile='log.lammps'): 
+def calc_lmp_force_sets(cmds,Scells_ph,atomtypes='atomic',logfile='log.lammps',lammps_header=[]): 
     """
     This function uses ase and lammps' python API to calculate forces. Comment this funciton if it's not installed.
     In cmd, specifies the potential    
     Scells takes the list of perturbated supercells,  phonopyatom objs.
     
     """
-    lammps_header=['units metal',
-                   'atom_style '+atomtypes,
-                   'atom_modify map array sort 0 0']
+    if lammps_header == []:
+        lammps_header=['units metal',
+                       'atom_style '+atomtypes,
+                       'atom_modify map array sort 0 0']        
+        
+    
 
     if type(Scells_ph)!=list:
         Scells_ph = [Scells_ph]
@@ -89,16 +92,17 @@ def calc_lmp_force_sets(cmds,Scells_ph,atomtypes='atomic',logfile='log.lammps'):
     return force_scells
 
 
-def calc_lmp_force(cmds,Scell_ph,atomtypes='atomic',logfile='log.lammps'): 
+def calc_lmp_force(cmds,Scell_ph,atomtypes='atomic',logfile='log.lammps',lammps_header=[]): 
     """
     This function uses ase and lammps' python API to calculate forces. 
     In cmd, specifies the potential    
     Scells takes the list of perturbated supercells,  phonopyatom objs.
     
     """
-    lammps_header=['units metal',
-                   'atom_style '+atomtypes,
-                   'atom_modify map array sort 0 0']
+    if lammps_header == []:
+        lammps_header=['units metal',
+                       'atom_style '+atomtypes,
+                       'atom_modify map array sort 0 0']  
 
 
 
@@ -110,7 +114,7 @@ def calc_lmp_force(cmds,Scell_ph,atomtypes='atomic',logfile='log.lammps'):
     return forces
 
 
-def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammps'): 
+def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammps',lammps_header=[]): 
     # Scell0 & Scell_snaps are phonopy atom objects. Scell0 is the unperturbated supercell,
     # Scell_snaps are perturbated ones.
     Nsnaps = len(Scell_snaps)
@@ -135,7 +139,7 @@ def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammp
             ui[iat][1]=ur[iat][0]*latt_vec[0][1]+ur[iat][1]*latt_vec[1][1]+ur[iat][2]*latt_vec[2][1]
             ui[iat][2]=ur[iat][0]*latt_vec[0][2]+ur[iat][1]*latt_vec[1][2]+ur[iat][2]*latt_vec[2][2]
         scell_ase = api_qpv.phonopyAtoms_to_aseAtoms(scell)
-        fi = calc_lmp_force(cmds,scell_ase,atomtypes,logfile) # get forces
+        fi = calc_lmp_force(cmds,scell_ase,atomtypes,logfile,lammps_header) # get forces
         displacements[i][:][:]=ui
         forces[i][:][:]=fi
     
@@ -304,3 +308,4 @@ def Compute_MAB_matrix_Gamma(FC2,eigs,molID,groupA,groupB):
 
             
                     
+
