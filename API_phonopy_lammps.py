@@ -98,6 +98,9 @@ def calc_lmp_force(cmds,Scell_ph,atomtypes='atomic',logfile='log.lammps',lammps_
     In cmd, specifies the potential    
     Scells takes the list of perturbated supercells,  phonopyatom objs.
     
+    Settings in the lammps header will overwrite the settings of the atmotypes, if lammps_header is
+    explictly specified. 
+    
     """
     if lammps_header == []:
         lammps_header=['units metal',
