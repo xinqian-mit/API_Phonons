@@ -145,10 +145,11 @@ def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammp
 #---------------------------------------------File io-------------------------------------------------------------#
 def read_lmp_data(in_file,Z_of_type):
     cell0 = io.read(in_file,format='lammps-data')
-    Atom_No = cell0.get_atomic_numbers()
+    Atom_tag = cell0.get_atomic_numbers()
+    Atom_No = np.zeros(cell0.get_global_number_of_atoms())
     for (i,Z) in enumerate(Z_of_type):
         iaty = i+1
-        Atom_No[Atom_No==iaty]=Z
+        Atom_No[Atom_tag==iaty]=Z
     cell0.set_atomic_numbers(Atom_No)
     return cell0
 
