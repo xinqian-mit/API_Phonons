@@ -64,7 +64,8 @@ def get_lmp_boxbounds(Scell):
 
 
 
-def calc_lmp_force_sets(cmds,Scells_ph,atomtypes='atomic',logfile='log.lammps',lammps_header=[]): 
+def calc_lmp_force_sets(cmds,Scells_ph,atomtypes='atomic',logfile='log.lammps',lammps_header=[],
+                        create_atoms=True, create_box=True, boundary=True, keep_alive=False): 
     """
     This function uses ase and lammps' python API to calculate forces. Comment this funciton if it's not installed.
     In cmd, specifies the potential    
@@ -83,7 +84,8 @@ def calc_lmp_force_sets(cmds,Scells_ph,atomtypes='atomic',logfile='log.lammps',l
     
     force_scells=[]
     for scell_ph in Scells_ph:
-        lammps = LAMMPSlib(lmpcmds=cmds, log_file=logfile,lammps_header=lammps_header) # lammps obj has to be in the loop.
+        lammps = LAMMPSlib(lmpcmds=cmds, log_file=logfile,lammps_header=lammps_header,
+                           create_atoms=create_atoms, create_box=create_box, boundary=boundary, keep_alive=keep_alive) # lammps obj has to be in the loop.
         scell = api_qpv.phonopyAtoms_to_aseAtoms(scell_ph)
         scell.set_calculator(lammps)
         forces = scell.get_forces()
@@ -92,7 +94,8 @@ def calc_lmp_force_sets(cmds,Scells_ph,atomtypes='atomic',logfile='log.lammps',l
     return force_scells
 
 
-def calc_lmp_force(cmds,Scell_ph,atomtypes='atomic',logfile='log.lammps',lammps_header=[]): 
+def calc_lmp_force(cmds,Scell_ph,atomtypes='atomic',logfile='log.lammps',lammps_header=[],
+                   create_atoms=True, create_box=True, boundary=True, keep_alive=False): 
     """
     This function uses ase and lammps' python API to calculate forces. 
     In cmd, specifies the potential    
@@ -109,7 +112,8 @@ def calc_lmp_force(cmds,Scell_ph,atomtypes='atomic',logfile='log.lammps',lammps_
 
 
 
-    lammps = LAMMPSlib(lmpcmds=cmds, log_file=logfile,lammps_header=lammps_header) # lammps obj has to be in the loop.
+    lammps = LAMMPSlib(lmpcmds=cmds, log_file=logfile,lammps_header=lammps_header,
+                       create_atoms=create_atoms, create_box=create_box, boundary=boundary, keep_alive=keep_alive) # lammps obj has to be in the loop.
     scell = api_qpv.phonopyAtoms_to_aseAtoms(Scell_ph)
     scell.set_calculator(lammps)
     forces = scell.get_forces()
@@ -117,7 +121,8 @@ def calc_lmp_force(cmds,Scell_ph,atomtypes='atomic',logfile='log.lammps',lammps_
     return forces
 
 
-def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammps',lammps_header=[]): 
+def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammps',lammps_header=[],
+                   create_atoms=True, create_box=True, boundary=True, keep_alive=False): 
     # Scell0 & Scell_snaps are phonopy atom objects. Scell0 is the unperturbated supercell,
     # Scell_snaps are perturbated ones.
     Nsnaps = len(Scell_snaps)
@@ -142,7 +147,8 @@ def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammp
             ui[iat][1]=ur[iat][0]*latt_vec[0][1]+ur[iat][1]*latt_vec[1][1]+ur[iat][2]*latt_vec[2][1]
             ui[iat][2]=ur[iat][0]*latt_vec[0][2]+ur[iat][1]*latt_vec[1][2]+ur[iat][2]*latt_vec[2][2]
         scell_ase = api_qpv.phonopyAtoms_to_aseAtoms(scell)
-        fi = calc_lmp_force(cmds,scell_ase,atomtypes,logfile,lammps_header) # get forces
+        fi = calc_lmp_force(cmds,scell_ase,atomtypes,logfile,lammps_header=lammps_header,
+                            create_atoms=create_atoms, create_box=create_box, boundary=boundary, keep_alive=keep_alive) # get forces
         displacements[i][:][:]=ui
         forces[i][:][:]=fi
     
@@ -150,6 +156,58 @@ def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammp
 
 
 #---------------------------------------------File io-------------------------------------------------------------#
+def write_ScellCar_MaterStudio(Prefix,ucell,Nrepeat,Element_atypes,Symbol_atypes):
+    Na = Nrepeat[0]
+    Nb = Nrepeat[1]
+    Nc = Nrepeat[2]
+    fid = open(Prefix+str(Na)+str(Nb)+str(Nc)+'.car','w')
+    
+    Nbasis = ucell.get_global_number_of_atoms()
+    atyp_ucell = ucell.get_tags() # remember to set the type as tags
+    ucell_vec = ucell.get_cell()
+    pos_ucell = ucell.get_positions()
+    charges_ucell = ucell.get_initial_charges()
+    Natoms = Na*Nb*Nc*Nbasis
+    
+    Num_ele = np.zeros(len(Symbol_atypes),dtype='int64')
+    
+    alpha = np.arccos(np.dot(ucell_vec[1],ucell_vec[2])/np.linalg.norm(ucell_vec[1])/np.linalg.norm(ucell_vec[2]))/np.pi*180
+    beta = np.arccos(np.dot(ucell_vec[2],ucell_vec[0])/np.linalg.norm(ucell_vec[2])/np.linalg.norm(ucell_vec[0]))/np.pi*180
+    gamma = np.arccos(np.dot(ucell_vec[0],ucell_vec[1])/np.linalg.norm(ucell_vec[0])/np.linalg.norm(ucell_vec[1]))/np.pi*180
+    
+    La = np.linalg.norm(ucell_vec[0])*Na
+    Lb = np.linalg.norm(ucell_vec[1])*Nb
+    Lc = np.linalg.norm(ucell_vec[2])*Nc
+    
+    
+    fid.write('!BIOSYM archive 3\n');
+    fid.write('PBC=ON\n');
+    fid.write('Materials Studio Generated CAR File\n');
+    fid.write('!DATE Sat Mar 12 15:36:48 2016\n');
+    fid.write('PBC    {:.4f}    {:.4f}   {:.4f}   {:.4f}   {:.4f}  {:.4f} (P1)\n'.format(La,Lb,Lc,alpha,beta,gamma));
+    fom='{:4s}    {:-13.9f}  {:-13.9f}  {:-13.9f} XXXX {:g}      {:3s}      {:2s}  {:-4.4f}\n';    
+    
+    
+    for ib in range(Nbasis):
+        icell = 0
+        for iz in range(Nc):
+            for iy in range(Nb):
+                for ix in range(Na):
+                    icell = icell +1
+                    pos = pos_ucell[ib,:] + ix*ucell_vec[0,:] + iy*ucell_vec[1,:] + iz*ucell_vec[2,:]
+                    atype = atyp_ucell[ib]-1 # I'm assuming the tags start counting from 1.
+                    element = Element_atypes[atype]
+                    Num_ele[atype] = Num_ele[atype]+1
+                    symbol = Symbol_atypes[atype]
+                    aindex = element+str(Num_ele[atype])
+                    fid.write(fom.format(aindex,pos[0],pos[1],pos[2],1,symbol,element,charges_ucell[ib]))
+    fid.write('end')
+    fid.close()
+                    
+                    
+                    
+
+
 def read_lmp_data(in_file,Z_of_type):
     cell0 = io.read(in_file,format='lammps-data')
     Atom_tag = cell0.get_atomic_numbers()
@@ -161,11 +219,15 @@ def read_lmp_data(in_file,Z_of_type):
     return cell0
 
 
-def write_lmp_data(filename,SimCell,molID=[],writeR0=False):
-    Masses_of_atypes = np.unique(SimCell.get_masses())
-    Number_of_atom_types = len(Masses_of_atypes)
+def write_lmp_data(filename,SimCell,molID=[],writeR0=False,atom_style='full',Masses_of_atypes=[]):
+    if Masses_of_atypes==[]:
+        Masses_of_atypes = np.unique(SimCell.get_masses())
+    Number_of_atom_types = len(np.unique(SimCell.get_atomic_numbers()))
+    
     Masses = SimCell.get_masses()
     Pos = SimCell.get_positions()
+    Charges = SimCell.get_initial_charges()
+    tags0 = SimCell.get_tags()
 
     fid = open(filename,'w')
     
@@ -193,26 +255,35 @@ def write_lmp_data(filename,SimCell,molID=[],writeR0=False):
     fid.write('\n')
     
     
-    if len(molID) ==0:
+    if atom_style == 'charge':
         fid.write('Atoms # charge\n') # use atomic_style full
         fid.write('\n')
         for iat in range(SimCell.get_global_number_of_atoms()):
             for atype in range(Number_of_atom_types):
-                if Masses[iat] == Masses_of_atypes[atype]:
-                    tag = atype+1
-            fid.write('{}   {}  {:6f}    {:9f}    {:9f}     {:9f} \n'.format(iat+1,tag,0.0,Pos[iat][0],Pos[iat][1],Pos[iat][2]))
+                if np.abs(Masses[iat] - Masses_of_atypes[atype])<0.01:
+                    if np.count_nonzero(tags0)>0:
+                        tag =tags0[iat]+1
+                    else:
+                        tag = atype+1
+                    
+            fid.write('{}   {}  {:6f}    {:9f}    {:9f}     {:9f} \n'.format(iat+1,tag,Charges[iat],Pos[iat][0],Pos[iat][1],Pos[iat][2]))
             if writeR0:
                 fid2.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],0,0,0,iat+1,tag))
         fid.write('\n')
         
-    else:
+    if atom_style == 'full':
+        if molID == []:
+            molID = np.ones(SimCell.get_number_of_atoms(),dtype='int32')
         fid.write('Atoms # full\n')
         fid.write('\n')
         for iat in range(SimCell.get_number_of_atoms()):
             for atype in range(Number_of_atom_types):
-                if Masses[iat] == Masses_of_atypes[atype]:
-                    tag = atype+1
-            fid.write('{}   {}   {}  {:6f}    {:9f}    {:9f}     {:9f} \n'.format(iat+1,molID[iat],tag,0.0,Pos[iat][0],Pos[iat][1],Pos[iat][2]))
+                if np.abs(Masses[iat] - Masses_of_atypes[atype])<0.01:
+                    if np.count_nonzero(tags0)>0:
+                        tag =tags0[iat]+1
+                    else:
+                        tag = atype+1
+            fid.write('{}   {}   {}  {:6f}    {:9f}    {:9f}     {:9f} \n'.format(iat+1,molID[iat],tag,Charges[iat],Pos[iat][0],Pos[iat][1],Pos[iat][2]))
             if writeR0:
                 fid2.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],0,0,0,iat+1,tag))            
         fid.write('\n')   
