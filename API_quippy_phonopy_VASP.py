@@ -23,11 +23,12 @@ from numba import njit
 
 ## -------------------------------------- Convert atom object type between packages ----------------------------------------------#
 def aseAtoms_to_phonopyAtoms(aseAtoms):
-    return PhonopyAtoms(symbols=aseAtoms.get_chemical_symbols(),positions=aseAtoms.get_positions(),cell=aseAtoms.get_cell())
+    return PhonopyAtoms(symbols=aseAtoms.get_chemical_symbols(),positions=aseAtoms.get_positions(),cell=aseAtoms.get_cell(),masses=aseAtoms.get_masses())
 
 def phonopyAtoms_to_aseAtoms(PhonopyAtoms,pbc=[True,True,True]):
     aseAtoms = ase.Atoms(symbols=PhonopyAtoms.get_chemical_symbols(),positions=PhonopyAtoms.get_positions(),cell=PhonopyAtoms.get_cell())
     aseAtoms.set_pbc(pbc)
+    aseAtoms.set_masses(PhonopyAtoms.get_masses())
     Atomic_numbers = PhonopyAtoms.get_atomic_numbers()
     Atomic_type_tags = np.zeros(np.shape(Atomic_numbers))
     atomic_type_unique = np.unique(Atomic_numbers)
