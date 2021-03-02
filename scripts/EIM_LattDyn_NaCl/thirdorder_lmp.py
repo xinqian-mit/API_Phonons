@@ -17,7 +17,7 @@ import sys
 import API_phonopy_lammps as api_pl
 
 
-Nrepeat = [4,4,4]
+Nrepeat = [3,3,3]
 nneigh = 4 # neighbor cutoff
 cmds = ["pair_style eim","pair_coeff * * Na Cl ffield.eim Na Cl"]
 
