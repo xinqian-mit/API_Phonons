@@ -185,7 +185,7 @@ def write_ScellCar_MaterStudio(Prefix,ucell,Nrepeat,Element_atypes,Symbol_atypes
     fid.write('Materials Studio Generated CAR File\n');
     fid.write('!DATE Sat Mar 12 15:36:48 2016\n');
     fid.write('PBC    {:.4f}    {:.4f}   {:.4f}   {:.4f}   {:.4f}  {:.4f} (P1)\n'.format(La,Lb,Lc,alpha,beta,gamma));
-    fom='{:4s}    {:-13.9f}  {:-13.9f}  {:-13.9f} XXXX {:g}      {:3s}      {:2s}  {:-4.4f}\n';    
+    fom='{:4s}    {:-13.9f}  {:-13.9f}  {:-13.9f} XXXX {:g}      {:3s}      {:2s}  {:-.4f}\n';    
     
     
     for ib in range(Nbasis):
