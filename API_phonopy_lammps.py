@@ -262,13 +262,13 @@ def write_lmp_data(filename,SimCell,molID=[],writeR0=False,atom_style='full',Mas
             for atype in range(Number_of_atom_types):
                 if np.abs(Masses[iat] - Masses_of_atypes[atype])<0.01:
                     if np.count_nonzero(tags0)>0:
-                        tag =tags0[iat]+1
+                        tag =tags0[iat]
                     else:
                         tag = atype+1
                     
             fid.write('{}   {}  {:6f}    {:9f}    {:9f}     {:9f} \n'.format(iat+1,tag,Charges[iat],Pos[iat][0],Pos[iat][1],Pos[iat][2]))
             if writeR0:
-                fid2.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],0,0,0,iat+1,tag))
+                fid2.write('{:.9f} {:.9f} {:.9f} {:.9f} {:.9f} {:.9f} {} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],0,0,0,iat+1,tag))
         fid.write('\n')
         
     if atom_style == 'full':
@@ -280,10 +280,10 @@ def write_lmp_data(filename,SimCell,molID=[],writeR0=False,atom_style='full',Mas
             for atype in range(Number_of_atom_types):
                 if np.abs(Masses[iat] - Masses_of_atypes[atype])<0.01:
                     if np.count_nonzero(tags0)>0:
-                        tag =tags0[iat]+1
+                        tag =tags0[iat]
                     else:
                         tag = atype+1
-            fid.write('{}   {}   {}  {:6f}    {:9f}    {:9f}     {:9f} \n'.format(iat+1,molID[iat],tag,Charges[iat],Pos[iat][0],Pos[iat][1],Pos[iat][2]))
+            fid.write('{}   {}   {}  {:6f}    {:.9f}    {:.9f}     {:.9f} \n'.format(iat+1,molID[iat],tag,Charges[iat],Pos[iat][0],Pos[iat][1],Pos[iat][2]))
             if writeR0:
                 fid2.write('{:9f} {:9f} {:9f} {:9f} {:9f} {:9f} {} {}\n'.format(Pos[iat][0],Pos[iat][1],Pos[iat][2],0,0,0,iat+1,tag))            
         fid.write('\n')   
