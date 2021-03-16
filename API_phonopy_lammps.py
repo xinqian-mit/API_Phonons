@@ -15,7 +15,7 @@ import multiprocessing as mp
 #from joblib import Parallel, delayed  
 import copy as cp
 import API_quippy_phonopy_VASP as api_qpv
-
+from numba import njit 
 ## ------------------------------------- Get Lammps box parameters -----------------------------------------------------##
 
 
@@ -187,6 +187,12 @@ def write_ScellCar_MaterStudio(Prefix,ucell,Nrepeat,Element_atypes,Symbol_atypes
     fid.write('PBC    {:.4f}    {:.4f}   {:.4f}   {:.4f}   {:.4f}  {:.4f} (P1)\n'.format(La,Lb,Lc,alpha,beta,gamma));
     fom='{:4s}    {:-13.9f}  {:-13.9f}  {:-13.9f} XXXX {:g}      {:3s}      {:2s}  {:-.4f}\n';    
     
+    Num_ele_ucell = np.zeros(len(Symbol_atypes),dtype='int64')
+    for ib in range(Nbasis):
+        atype = atyp_ucell[ib]-1
+        Num_ele_ucell[atype] = Num_ele_ucell[atype]+1
+        
+    
     
     for ib in range(Nbasis):
         icell = 0
@@ -199,7 +205,10 @@ def write_ScellCar_MaterStudio(Prefix,ucell,Nrepeat,Element_atypes,Symbol_atypes
                     element = Element_atypes[atype]
                     Num_ele[atype] = Num_ele[atype]+1
                     symbol = Symbol_atypes[atype]
-                    aindex = element+str(Num_ele[atype])
+                    aaint = Num_ele[atype]%Num_ele_ucell[atype]
+                    if aaint == 0:
+                        aaint = Num_ele_ucell[atype]
+                    aindex = element+str(aaint)
                     fid.write(fom.format(aindex,pos[0],pos[1],pos[2],1,symbol,element,charges_ucell[ib]))
     fid.write('end')
     fid.close()
@@ -382,4 +391,56 @@ def Compute_MAB_matrix_Gamma(FC2,eigs,molID,groupA,groupB):
 
             
                     
+# This function is for computing the phonon hybridization ratio between groups
+# See the reference: J. Phys. Chem. Lett. 2016, 7, 4744−4750
+def calculate_HybridRatio_Groups(atype_groups,eigvecs,atype_ucell):
+    """
+        Returns the hybridization ratio of each group at each k point on the dispersion. 
+        Will return an array with the shape [# of k-paths, # of k-points, # of branches, # of Groups]
+        atype_groups is a list that specify the which atom_type belongs to atom group. e.g [[1,2,3],[4]]
+        eigvecs is an eigvenctor.
+        atype_ucell specifies the atomic type id for each atom in the unit cell.
+    """
+    Npaths,Nk,Ns,Nbasis,DIM = np.shape(eigvecs)
+    Ngroups = len(atype_groups)
+    #print(Ngroups)
+    HybridRatio_Groups = np.zeros([Npaths,Nk,Ns,Ngroups])
+    
+    # build a list of atoms
+    groupid_list = np.zeros(Nbasis,dtype='int64')
+    for ig,atype_ig in enumerate(atype_groups):
+        for ib in range(Nbasis):
+            if atype_ucell[ib] in atype_ig:
+                groupid_list[ib] = ig
+            
+    
+    for ipath in range(Npaths):
+        for ik in range(Nk):
+            for js in range(Ns):
+                Total_sum,group_sum = Sum_dotprod_eigvec_groups(Ngroups,Nbasis,groupid_list,eigvecs[ipath][ik][js])
+                            
+                for ig in range(Ngroups):
+                    #print(Num[ig],Den)
+                    HybridRatio_Groups[ipath,ik,js,ig] = group_sum[ig]/Total_sum
+    
+    
+    return HybridRatio_Groups
 
+@njit
+def Sum_dotprod_eigvec_groups(Ngroups,Nbasis,groupid_list,eig_ks):
+    
+    Total_sum = 0
+    group_sum = np.zeros(Ngroups)
+    
+    for ib in range(Nbasis):
+        eig_ks_ib = eig_ks[ib]
+        dot_prod = np.real(np.conj(eig_ks_ib[0])*eig_ks_ib[0]   
+                           + np.conj(eig_ks_ib[1])*eig_ks_ib[1]
+                           +np.conj(eig_ks_ib[2])*eig_ks_ib[2]) # |eks(ib)|^2                            
+                
+        Total_sum += dot_prod
+        ig = groupid_list[ib]
+        group_sum[ig] += dot_prod
+                
+    
+    return Total_sum,group_sum
