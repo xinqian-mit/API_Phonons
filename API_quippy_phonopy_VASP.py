@@ -508,8 +508,53 @@ def disp_atom_along_mode_qs(q_red,eigvec,Ncells,prim_cell): # here the time phas
 
 
 ## -------------------------------------- File I/O ----------------------------------------------# 
+def write_band_structure(filename,phonon):
+    band_dict = phonon.get_band_structure_dict()
+    freqs_paths = band_dict['frequencies']
+    dists_paths = band_dict['distances']
+    fid = open(filename,'w')
+    
+    for ipath in range(len(freqs_paths)):
+        frequencies = freqs_paths[ipath]
+        distances = dists_paths[ipath]
+        
+        for j,freqs in enumerate(frequencies.T):
+            for i,d in enumerate(distances):
+                f = freqs[i]               
+                fid.write('{:.8f} {:.8f} '.format(d,f))
 
-
+                fid.write('\n')
+            fid.write('\n')
+        fid.write('\n')
+        
+    fid.close()     
+    
+def write_band_structure_color(filename,phonon,prop_for_color):
+    fid = open(filename,'w')
+    
+    Npaths,Nq,Ns,Ndim = np.shape(prop_for_color) # prop_for_color can be a vector with the last index as its dimensions.
+    band_dict = phonon.get_band_structure_dict()
+    freqs_paths = band_dict['frequencies']
+    dists_paths = band_dict['distances']    
+    
+    
+    
+    for ipath in range(len(freqs_paths)):
+        frequencies = freqs_paths[ipath]
+        distances = dists_paths[ipath]
+        props = prop_for_color[ipath]
+        for j,freqs in enumerate(frequencies.T):
+            for i,d in enumerate(distances):
+                f = freqs[i]
+                prop = props[i,j,:]
+                fid.write('{:.8f} {:.8f} '.format(d,f))
+                for ig in range(Ndim):
+                    fid.write(' {:.8f}'.format(prop[ig]))
+                fid.write('\n')
+            fid.write('\n')
+        fid.write('\n')
+        
+    fid.close()    
     
     
 def write_Supercells_VASP(Supercells,directory='./',prefix='POSCAR'):
