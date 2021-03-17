@@ -196,12 +196,13 @@ def get_reshaped_eigvecs(phonon_scell):
     Natom = int(N_modes/3)
     eigvecs_new=[]
     eigvecs_new_on_path = np.zeros([Nqs_on_path,N_modes,Natom,3],dtype="c8")
-    for eigvecs_on_path in eigvecs:
-        for qpoint in range(Nqs_on_path):
-            for s in range(N_modes):
-                for i in range(Natom):
-                    for m in range(3):
-                        eigvecs_new_on_path[qpoint,s,i,m]=eigvecs_on_path[qpoint,i*3+m,s]
+    for ipath,eigvecs_on_path in enumerate(eigvecs):
+        for iq,eigvecs_at_q in enumerate(eigvecs_on_path):
+            for imode,vec in enumerate(eigvecs_at_q.T):
+                eigvec = np.reshape(vec,[Natom,3])
+                eigvecs_new_on_path[iq,imode,:,:] = eigvec
+                
+        
         eigvecs_new.append(eigvecs_new_on_path)
                         
     return eigvecs_new
@@ -212,10 +213,8 @@ def get_freq_reshaped_eigvec_atq(phonon_scell,q):
     Natoms = int(Natoms_x3/3) #python3 is more rigorous on datatypes.
     #print(Natoms)
     eigvecs_new = np.zeros([Nmodes,Natoms,3],dtype="c8")
-    for s in range(Nmodes):
-        for i in range(Natoms):
-            for m in range(3):
-                eigvecs_new[s,i,m]=eigvecs[i*3+m,s]
+    for s,vec in enumerate(eigvecs.T):
+        eigvecs_new[s,:,:]=np.reshape(vec,[Natoms,3])
     return frequencies,eigvecs_new
 
 def get_reshaped_eigvecs_mesh(phonon_scell):
@@ -233,11 +232,9 @@ def get_reshaped_eigvecs_mesh(phonon_scell):
     (Nqpoints,Natoms_x3,Nmodes)=np.shape(eigvecs)
     Natoms = int(Natoms_x3/3)
     eigvecs_new = np.zeros([Nqpoints,Nmodes,Natoms,3],dtype="c8")
-    for iq in range(Nqpoints):
-        for s in range(Nmodes):
-            for i in range(Natoms):
-                for m in range(3):
-                    eigvecs_new[iq,s,i,m]=eigvecs[iq,i*3+m,s]
+    for iq,eigvecs_at_q in enumerate(eigvecs):
+        for s,vec in enumerate(eigvecs_at_q.T):
+            eigvecs_new[iq,s,:,:]= np.reshape(vec,[Natoms,3])
                     
     return eigvecs_new
 

@@ -393,7 +393,7 @@ def Compute_MAB_matrix_Gamma(FC2,eigs,molID,groupA,groupB):
                     
 # This function is for computing the phonon hybridization ratio between groups
 # See the reference: J. Phys. Chem. Lett. 2016, 7, 4744−4750
-def calculate_HybridRatio_Groups(atype_groups,eigvecs,atype_ucell):
+def calculate_HybridRatio_Groups(atype_groups,phonon,atype_ucell):
     """
         Returns the hybridization ratio of each group at each k point on the dispersion. 
         Will return an array with the shape [# of k-paths, # of k-points, # of branches, # of Groups]
@@ -401,7 +401,11 @@ def calculate_HybridRatio_Groups(atype_groups,eigvecs,atype_ucell):
         eigvecs is an eigvenctor.
         atype_ucell specifies the atomic type id for each atom in the unit cell.
     """
-    Npaths,Nk,Ns,Nbasis,DIM = np.shape(eigvecs)
+    
+    eigvecs = phonon.get_band_structure_dict()['eigenvectors']
+    
+    Npaths,Nk,Ns,Ndof = np.shape(eigvecs)
+    Nbasis = int(Ns/3)
     Ngroups = len(atype_groups)
     #print(Ngroups)
     HybridRatio_Groups = np.zeros([Npaths,Nk,Ns,Ngroups])
@@ -414,10 +418,14 @@ def calculate_HybridRatio_Groups(atype_groups,eigvecs,atype_ucell):
                 groupid_list[ib] = ig
             
     
-    for ipath in range(Npaths):
-        for ik in range(Nk):
-            for js in range(Ns):
-                Total_sum,group_sum = Sum_dotprod_eigvec_groups(Ngroups,Nbasis,groupid_list,eigvecs[ipath][ik][js])
+    for ipath,eigvecs_path in enumerate(eigvecs):
+        
+        for ik,eigvecs_at_k in enumerate(eigvecs_path):
+            
+            for js,vec in enumerate(eigvecs_at_k.T):
+                eig_ks = np.reshape(vec,[Nbasis,3])
+                #Total_sum = np.dot(np.conj(vec),vec)
+                Total_sum,group_sum = Sum_dotprod_eigvec_groups(Ngroups,Nbasis,groupid_list,eig_ks)
                             
                 for ig in range(Ngroups):
                     #print(Num[ig],Den)
@@ -429,14 +437,15 @@ def calculate_HybridRatio_Groups(atype_groups,eigvecs,atype_ucell):
 @njit
 def Sum_dotprod_eigvec_groups(Ngroups,Nbasis,groupid_list,eig_ks):
     
-    Total_sum = 0
+    
     group_sum = np.zeros(Ngroups)
+    Total_sum = 0
+    
+    
     
     for ib in range(Nbasis):
         eig_ks_ib = eig_ks[ib]
-        dot_prod = np.real(np.conj(eig_ks_ib[0])*eig_ks_ib[0]   
-                           + np.conj(eig_ks_ib[1])*eig_ks_ib[1]
-                           +np.conj(eig_ks_ib[2])*eig_ks_ib[2]) # |eks(ib)|^2                            
+        dot_prod = np.real(np.dot(np.conj(eig_ks_ib),eig_ks_ib))                           
                 
         Total_sum += dot_prod
         ig = groupid_list[ib]

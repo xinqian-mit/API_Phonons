@@ -16,7 +16,7 @@ a = 5.63095072418881 #5.65414946767 # lattice constant of NaCl
 nacl = crystal(['Na', 'Cl'], [(0, 0, 0), (0.5, 0.5, 0.5)], spacegroup=225,
                cellpar=[a, a, a, 90, 90, 90])
 
-Ncells=[4,4,4]
+Ncells=[3,3,3]
 File_prefix = "NaCl-qmesh"+str(Ncells[0])+ "x" + str(Ncells[1]) +"x"+ str(Ncells[2])+"-irred"
 Eigfile = File_prefix+".eig"
 GropuVelFile = File_prefix+".groupVel"
