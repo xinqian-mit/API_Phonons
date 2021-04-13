@@ -474,3 +474,45 @@ def Sum_dotprod_eigvec_groups(Ngroups,Nbasis,groupid_list,eig_ks):
                 
     
     return Total_sum,group_sum
+
+
+
+def calc_PartRatio_mesh(phonon):
+    # eigvecs should be calculated using set_mesh at gamma point
+    qpoints, weights, frequencies, eigvecs = phonon.get_mesh()
+    
+    Den = 0;
+    
+    (Nqpoints,Natoms_x3,Nmodes)=np.shape(eigvecs)
+    Natoms = int(Natoms_x3/3)    
+    
+    PartRatio = np.zeros([Nqpoints,Nmodes])
+    
+    for iq,eigvecs_at_q in enumerate(eigvecs):
+        for s,vec in enumerate(eigvecs_at_q.T):
+            evec = np.reshape(vec,[Natoms,3])
+            
+            PartRatio[iq,s] = PartRatio_mode(evec)
+            
+
+            
+    return frequencies,PartRatio
+
+@njit
+def PartRatio_mode(evec):
+    [Natoms,DIM] = np.shape(evec)
+    Den = 0
+    Num = 0
+    for iat in range(Natoms):
+        evec_i = evec[iat]
+        Den += (np.conj(evec_i[0])*evec_i[0] + np.conj(evec_i[1])*evec_i[1] + np.conj(evec_i[2])*evec_i[2]).real**2
+        Num += (np.conj(evec_i[0])*evec_i[0] + np.conj(evec_i[1])*evec_i[1] + np.conj(evec_i[2])*evec_i[2]).real
+        
+    Num = Num**2
+    
+    return Num/Den/Natoms  
+            
+                    
+       
+    
+    
