@@ -1,11 +1,11 @@
 # API_Phonons
 ----
 This is a API that interfaces ase, lammps, phonopy, alamode thirdorder.py, Fourthorder.py and quippy for phonon calulations, written
-by Xin Qian @ MIT. <br />
+by Xin Qian (CU Boulder, MIT). <br />
 <br />
 This package is developed to make it easy to extract  force constants and phononic properties of any 
 empirical or machine learning potentials, or directly from AIMD data. The API_*.py files contains functions for interfacing 
-different packages, while in the directory script/, I provided examples  for computing those different properties including 
+different packages,and computing phononic properties. This package also provided examples  for computing those different properties including 
 harmonic/thirdorder/fourth force constants, or dielectric tensor, or self-consistently compute force constants renormalized at higher temperatures, which even works
 for dynamically unstable system with soft phonon modes. <br />
 <br />
@@ -64,6 +64,9 @@ make yes-python<br />
 make foo mode=shared<br />
 <br />
 
+### NMA_sed
+Code and packages for computing spectral energy density from MD trajectories. See the readme.md in the folder for further details.
+
 ### Example Scripts
 
 In the folder Example_Scripts/, I provide several example files on how to use this package for phonon simulations:<br />
@@ -113,3 +116,5 @@ used as training datasets for TDEP, similar to AIMD snapshots.
 <br />
 #### Write_eigs:<br />
 This output eigenvector files in the GULP format. 
+
+
