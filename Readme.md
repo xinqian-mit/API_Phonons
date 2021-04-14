@@ -1,50 +1,60 @@
 # API_Phonons
 ----
-This is a API that interfaces ase, lammps, phonopy, alamode thirdorder.py, Fourthorder.py and quippy for molecular simulation, written
+This is a API that interfaces ase, lammps, phonopy, alamode thirdorder.py, Fourthorder.py and quippy for phonon calulations, written
 by Xin Qian @ MIT. <br />
 <br />
 This package is developed to make it easy to extract  force constants and phononic properties of any 
 empirical or machine learning potentials, or directly from AIMD data. The API_*.py files contains functions for interfacing 
 different packages, while in the directory script/, I provided examples  for computing those different properties including 
-harmonic/thirdorder force constants, or dielectric tensor, or self-consistently compute force constants renormalized at higher temperatures, which even works
+harmonic/thirdorder/fourth force constants, or dielectric tensor, or self-consistently compute force constants renormalized at higher temperatures, which even works
 for dynamically unstable system with soft phonon modes. <br />
 <br />
+
+### Reference
 If you find this package useful, please cite one of the following papers: <br /> 
 Xin Qian and Ronggui Yang, Phys. Rev. B 98, 224108 (2018) <br />
 Xin Qian, Shenyou Peng, Xiaobo Li, Yujie Wei, Ronggui Yang, Materials Today Physics 10, 100140 (2019) <br />
 
 ### Installation
 
-In general, one needs to use gcc, gfortran compilers together with openmpi (if you want to parallelize things). 
-Currently, this package is based on the following package versions:<br />
+In general, one needs to use gcc, gfortran, Cython compilers and parallel libs if necessary. 
+Currently, this package is based on the following packages:<br />
 
 ase 3.20.1<br /> 
-phonopy 2.7.1<br />
+phonopy 2.7.1 by A. Togo: https://phonopy.github.io/phonopy <br />
 lammps (24 Aug 2020)<br />
-quippy (The version as of Sep. 17 2020)<br /> 
-ALM 2.0.0<br />
-thirorder.py 1.1.0 developed by Prof. Wu Li and Prof. Mingo: http://www.shengbte.org/downloads <br />
-Fourthorder.py developed Prof. Xiulin Ruan: https://github.com/FourPhonon/FourPhonon<br />
+quippy & GAP by A. Brtok and Csanyi et al.: https://libatoms.github.io/GAP/installation.html <br /> 
+ALM 2.0.0 by Tadano: https://alm.readthedocs.io/en/develop/ <br />
+thirorder.py 1.1.0 by Prof. Wu Li and Prof. Mingo: http://www.shengbte.org/downloads <br />
+Fourthorder.py by Dr.Tianli Feng and Prof. Xiulin Ruan et al.: https://github.com/FourPhonon/FourPhonon<br />
 <br />
 
+Check the mannuals for each package installing/compiling them. 
+Other python libraries are also required:
+matscipy <br />
+numba # This save you from implementing the code in cython. When a function is called many times,
+I add the decorator @njit for just-in-time compilation, which would increase the speed by magnitudes.
 
-Both thirdorder.py & Fourthorder.py has been modified to python3 version.
-It is recommended to compile using gcc and python 3.8 for the above packages.
+### Tips for Installation:
+
+#### thirdorder.py and fourthorder.py
+Both thirdorder.py & Fourthorder.py has been modified to python3 version, please unzip the ThirdFourthOrder_py3.tar.xz
+for compilation, and add them to PYTHONPATH for import.
+
+#### quippy pakage
+It is recommended to compile using gcc and python 3.8 for the quippy packages.
 Seem intel compilers would generate segmentation fault for quippy, when call
 quippy.potential.Potential objects' calculate function. 
 
+#### phonopy and plot bandstructures
 To have proper plot of phonon bandstructures, it's also recommended to install latex support. 
 For ubuntu just do "apt-get install texlive-latex-recommended". 
-
-Other python libraries include: 
-matscipy <br />
-numba # This save you from implementing the code in cython. When a function is called many times,
-I add the decorator @njit for just-in-time compilation, which would increase the speed.  
 
 The python executable bandplot is used to export band.yaml files to text, new version of 
 phonopy-bandplot by phonopy doesn't have this function anymore, but using bandplot requires 
 phonopy installed.
 
+#### compiling lammps for the python interface
 When compiling lammps as python library, remember to do the following <br />
 <br />
 cd lib/python<br />
@@ -54,11 +64,9 @@ make yes-python<br />
 make foo mode=shared<br />
 <br />
 
-When installing thirorder.py, also remember to change the first line to #!/user/bin/env python3
-
 ### Example Scripts
 
-In the folder scripts/, I provide several example files on how to use this package for phonon simulations:<br />
+In the folder Example_Scripts/, I provide several example files on how to use this package for phonon simulations:<br />
 
 #### Dielectric_function_NaCl:<br />
 I provided a soap based machine learning potential for NaCl. With the LD_quipGap_phonopy_NAC.py computes the 
