@@ -24,8 +24,11 @@ lammps (24 Aug 2020)<br />
 quippy (The version as of Sep. 17 2020)<br /> 
 ALM 2.0.0<br />
 thirorder.py 1.1.0 <br />
+Fourthorder.py developed Prof. Xiulin Ruan: https://github.com/FourPhonon/FourPhonon<br />
 <br />
 
+
+Both thirdorder.py & Fourthorder.py has been modified to python3 version.
 It is recommended to compile using gcc and python 3.8 for the above packages.
 Seem intel compilers would generate segmentation fault for quippy, when call
 quippy.potential.Potential objects' calculate function. 
@@ -84,7 +87,7 @@ the cell can be relaxed using optimize module from ase.
  
 #### EIM_LattDyn_NaCl:<br />
 This gives example how we can interface lammps and phonopy to perform lattice dynamics based on the EIM potential supported
-by lammps.
+by lammps. Thirdorder.py and Fourthorder.py are implemented with lammps code for computing FC3 and FC4.
 <br />
 #### SnapsDFT_FCs_ALM:<br />
 This example uses Alamode to compute force constants, based on DFT data of energy and forces of random snapshots
