@@ -1,6 +1,6 @@
 # API_Phonons
 ----
-This is a API that interfaces ase, lammps, phonopy, alamode thirdorder.py and quippy for molecular simulation, written
+This is a API that interfaces ase, lammps, phonopy, alamode thirdorder.py, Fourthorder.py and quippy for molecular simulation, written
 by Xin Qian @ MIT. <br />
 <br />
 This package is developed to make it easy to extract  force constants and phononic properties of any 
@@ -23,7 +23,7 @@ phonopy 2.7.1<br />
 lammps (24 Aug 2020)<br />
 quippy (The version as of Sep. 17 2020)<br /> 
 ALM 2.0.0<br />
-thirorder.py 1.1.0 <br />
+thirorder.py 1.1.0 developed by Prof. Wu Li and Prof. Mingo: http://www.shengbte.org/downloads <br />
 Fourthorder.py developed Prof. Xiulin Ruan: https://github.com/FourPhonon/FourPhonon<br />
 <br />
 
