@@ -3,6 +3,7 @@
 # usage:
 # # python3 fourthorder_gap_mp.py na nb nc cutoff( -i|nm ) n_processes "directory/gp_new.xml"
 import numpy as np
+import quippy
 import API_quippy_thirdorder as FC3
 import Fourthorder_core
 from Fourthorder_common import *
@@ -24,7 +25,7 @@ def callback_phipar(result):
     
 def calc_phipart(i,e,nirred,ntot,p,gp_xml_file,sposcar,namepattern):
     
-    phi_i = np.zeros([3,nirred,ntot],dtype='float64')
+    phi_i = np.zeros([3,ntot],dtype='float64')
     for n in range(8): 
         isign=(-1)**(n//4)
         jsign=(-1)**(n%4//2)
@@ -42,8 +43,12 @@ def calc_phipart(i,e,nirred,ntot,p,gp_xml_file,sposcar,namepattern):
         Scell = Intf_vasp.read_vasp(filename)
         os.remove(filename)
         #print number
-        Scell_quip = api_qpv.phonopyAtoms_to_aseAtoms(Scell)
-        force = np.array(api_qpv.calc_force_GAP(gp_xml_file,Scell_quip))  
+        scell = api_qpv.phonopyAtoms_to_aseAtoms(Scell)
+        pot = quippy.potential.Potential(param_filename=gp_xml_file)
+        scell.set_calculator(pot)
+        force = scell.get_forces()
+        
+        #force = np.array(api_qpv.calc_force_GAP(gp_xml_file,Scell_quip))  
         phi_i -= (isign * jsign * ksign * force[p,:].T)
         # put the result in a queue object, which will be retrieved by get
     return (i,phi_i)
