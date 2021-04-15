@@ -76,13 +76,17 @@ I provided a soap based machine learning potential for NaCl. With the LD_quipGap
 harmonic force constants (FC2), while thirorder_gap.py computes third order anharmonic force constants (FC3). The 
 usage of thirdorder_gap.py is the same as thirdorder_vasp.py for ShengBTE, execute with <br />
 <br />
-python3 thirdorder_gap.py na nb nc cutoff(nm)|-n <directory of GAP potential file> <br />
+python3 thirdorder_gap.py na nb nc cutoff(nm)|-n GAP_potential_file <br />
 <br />
 where na nb and nc are the supercell dimensions, followed by cutoff radius or -n where -n is the number of nearest
 neighbors. There are also parallelized scripts for fc3 calculation such as thirdorder_gap_mp.py, compute with:<br />
 <br />
-python3 thirdorder_gap_mp.py na nb nc cutoff(nm)|-n Nprocesses <directory of GAP potential file> <br />
+python3 thirdorder_gap_mp.py na nb nc cutoff(nm)|-n Nprocesses GAP_potential_file <br />
 <br />
+Similarly, fourthorder force constants can also be evaluated using:
+<br />
+python3 fourthorder_gap_mp.py na nb nc cutoff(nm)|-n Nprocesses GAP_potential_file <br />
+
 The jupyter notebook script then computes the dielectric function.  
 for perturbated snapshots. 
 <br />
