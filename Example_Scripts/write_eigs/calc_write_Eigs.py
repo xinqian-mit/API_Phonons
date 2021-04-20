@@ -32,10 +32,10 @@ if NAC == True:
         open("BORN"),
         phonon_scell.get_primitive(),
         phonon_scell.get_primitive_symmetry())
-if nac_params['factor'] == None:
-    physical_units = get_default_physical_units('vasp')
-    nac_params['factor'] = physical_units['nac_factor']
-    phonon_scell._nac_params=nac_params
+    if nac_params['factor'] == None:
+        physical_units = get_default_physical_units('vasp')
+        nac_params['factor'] = physical_units['nac_factor']
+        phonon_scell._nac_params=nac_params
 
 phonon_scell.produce_force_constants()
 phonon_scell.symmetrize_force_constants()
