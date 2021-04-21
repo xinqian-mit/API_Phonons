@@ -83,25 +83,39 @@ cpdef Lorentizan(double x,double width):
 cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double factor = VaspToTHz):
     cdef double A2m = 1e-10
     cdef double THz2Hz = 1e12
-    cdef double complex[:,:,:] ddms,ddm_q,Vmat
+    cdef double complex[:,:,:] ddms
+    cdef double complex[:,:,:] ddm_q
+    cdef double complex[:,:,:] Vmat
     cdef double complex[:,:] eigvecs, 
-    cdef double complex[:] SV_sr,SV_rs,V_sr,V_rs, eig_s, eig_r
-    cdef int s,r,Ns,i
-    cdef double ws,wr
-    cdef double[:] freqs,qq,q_shifted
-    cdef double lorentz
+    cdef double complex[:] SV_sr
+    cdef double complex[:] SV_rs
+    cdef double complex[:] V_sr
+    cdef double complex[:] V_rs
+    cdef double complex[:] eig_s
+    cdef double complex[:] eig_r
+    cdef double[:] freqs
+    cdef double[:] qq
+    cdef double[:] q_shifted   
     cdef double[:] Diffusivity
+    cdef int s
+    cdef int r
+    cdef int Ns
+    cdef int i
+    cdef double ws
+    cdef double wr
+    cdef double lorentz
+
     
-    qq = np.array(q)
+    qq = np.array(q)   
     
-    ddms = get_dq_dynmat_q(phonon,qq)
     
     dm =  phonon.get_dynamical_matrix_at_q(qq)
     eigvals, eigvecs = np.linalg.eigh(dm)
     eigvals = eigvals.real
-    freqs = np.sqrt(abs(eigvals)) * np.sign(eigvals) * factor  
+    freqs = np.sqrt(np.abs(eigvals)) * np.sign(eigvals) * factor  
     
     Ns = len(freqs)
+    
     
     SV_sr = np.zeros(3,dtype='complex128')
     SV_rs = np.zeros(3,dtype='complex128')
@@ -109,14 +123,17 @@ cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double factor = VaspToTHz)
     V_rs = np.zeros(3,dtype='complex128')
     Vmat = np.zeros([Ns,Ns,3],dtype='complex128')
     
+    
+    ddms = get_dq_dynmat_q(phonon,qq)    
     if np.linalg.norm(qq) < 1e-5:
         q_shifted = np.array([1e-5,1e-5,1e-5])
         ddms = get_dq_dynmat_q(phonon,q_shifted)
     
-    ddm_q = ddms[1:]
+    ddm_q = ddms[1:,:,:]
         # central derivative, need to shift by small amount to obtain the correct derivative. 
         # Otherwise will dD/dq be zero due to the fact D(q)=D(-q). 
-        
+    
+    #print(ddm_q.shape)    
    
     
     
@@ -126,13 +143,15 @@ cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double factor = VaspToTHz)
     for s in range(Ns):
         ws = freqs[s]*2*np.pi
         eig_s = eigvecs.T[s]
+        print(str(np.round(s/Ns)*10)+'% completed')
         for r in range(s+1,Ns):
             wr = freqs[r]*2*np.pi
             eig_r = eigvecs.T[r]
             V_sr = get_Vmat_modePair_q(ddm_q,eig_s,eig_r,ws,wr,factor)
             V_sr = symmetrize_gv(phonon,qq,V_sr) # symmetrize
+            V_rs = -np.conj(V_sr) # antihermitians
             Vmat[s,r,:] = V_sr
-            Vmat[r,s,:] = -np.conj(V_sr) # antihermitian
+            Vmat[r,s,:] = V_rs
             
             
             
@@ -141,11 +160,17 @@ cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double factor = VaspToTHz)
                 SV_rs[i] = V_rs[i]*(ws+wr)/2.
              
             lorentz = Lorentizan(ws-wr,LineWidth)
+            #print(lorentz)
             
             Diffusivity[s] += np.dot(np.conj(SV_sr),SV_sr).real*lorentz
             Diffusivity[r] += np.dot(np.conj(SV_rs),SV_rs).real*lorentz
                 
-        Diffusivity[s] *= np.pi/3/ws**2 *A2m**2*factor # spectral dw
+        
+        
+        
+    for s in range(Ns):
+        ws = freqs[s]*2*np.pi
+        Diffusivity[s] *= np.pi/3/(ws**2)*(A2m**2)*factor # spectral dw
         
     return Diffusivity,Vmat
             
