@@ -4,7 +4,7 @@ from phonopy.structure.atoms import PhonopyAtoms
 from phonopy import Phonopy
 import phonopy.file_IO as PhonIO
 import phonopy.interface.vasp as Intf_vasp
-import API_quippy_phonopy_VASP as api_qpv
+import API_phonopy as api_ph
 import API_phonopy_lammps as api_pl
 from phonopy.interface.calculator import get_default_physical_units
 
@@ -28,7 +28,7 @@ Scells_phonopy = phonon_scell.get_supercells_with_displacements() # This returns
 
 Scells_ase = []
 for scell in Scells_phonopy:
-    Scells_ase.append(api_qpv.phonopyAtoms_to_aseAtoms(scell))
+    Scells_ase.append(api_ph.phonopyAtoms_to_aseAtoms(scell))
 
 force_scells = api_pl.calc_lmp_force_sets(cmds,Scells_ase)
 
@@ -54,9 +54,9 @@ PhonIO.write_FORCE_CONSTANTS(phonon_scell.get_force_constants(), filename='FORCE
 
 
 phonon_scell.set_mesh(Ncells, is_gamma_center=True, is_eigenvectors=True)
-eigvecs = api_qpv.get_reshaped_eigvecs_mesh(phonon_scell)
+eigvecs = api_ph.get_reshaped_eigvecs_mesh(phonon_scell)
 
-api_qpv.write_unitcell_eigvecs_qmesh_gulp(Eigfile,eigvecs,phonon_scell)
-api_qpv.write_freq_velocity_qmesh(GropuVelFile,phonon_scell)
+api_ph.write_unitcell_eigvecs_qmesh_gulp(Eigfile,eigvecs,phonon_scell)
+api_ph.write_freq_velocity_qmesh(GropuVelFile,phonon_scell)
 
 
