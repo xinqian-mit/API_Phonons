@@ -80,7 +80,7 @@ cpdef Lorentizan(double x,double width):
     return 1/np.pi*width/2/(x*x + width*width/4)
     
     
-cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double threshold=1e-4,double factor = VaspToTHz):
+cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double factor = VaspToTHz):
     cdef double A2m = 1e-10
     cdef double THz2Hz = 1e12
     cdef double complex[:,:,:] ddms,ddm_q,Vmat
