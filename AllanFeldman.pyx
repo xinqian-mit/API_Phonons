@@ -101,6 +101,7 @@ cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double factor = VaspToTHz)
     cdef int r
     cdef int Ns
     cdef int i
+    cdef int perc
     cdef double ws
     cdef double wr
     cdef double lorentz
@@ -143,7 +144,11 @@ cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double factor = VaspToTHz)
     for s in range(Ns):
         ws = freqs[s]*2*np.pi
         eig_s = eigvecs.T[s]
-        print(str(np.round(s/Ns)*10)+'% completed')
+        perc = np.round(s/Ns)*10
+        if perc%10 < 0.001:
+            print(str(perc)+'% completed')
+        
+       
         for r in range(s+1,Ns):
             wr = freqs[r]*2*np.pi
             eig_r = eigvecs.T[r]
