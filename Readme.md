@@ -99,7 +99,12 @@ This folder shows how temperature stablized phonon dispersion of bcc-Zr, which
 is dynamically unstable at 0K. Also included a script for relaxing cell structures.
 quippy potential objects can set as ase calculators using atom.set_calculator(). Then
 the cell can be relaxed using optimize module from ase.
- 
+<br />
+The file RandDisps_SelfConsist_FC2_FC3.py and RandDisps_SelfConsit_FC2_GAP_ALM.py give examples how to self-consistently compute second and thirdorder force constants. I fi>
+use the finite displacement method, and obtain the first generation of eigenvectors. Then I used H>
+the new set of FC2 and FC3, and a new set of eigenvectors. This process is iterated. Convergence o>
+usually be achieved after ~ 5 iterations.
+<br />
 #### EIM_LattDyn_NaCl:<br />
 This gives example how we can interface lammps and phonopy to perform lattice dynamics based on the EIM potential supported
 by lammps. Thirdorder.py and Fourthorder.py are implemented with lammps code for computing FC3 and FC4.
@@ -108,12 +113,7 @@ by lammps. Thirdorder.py and Fourthorder.py are implemented with lammps code for
 This example uses Alamode to compute force constants, based on DFT data of energy and forces of random snapshots
 The random snapshots are generated based on this paper: Phys. Rev. B 95, 014302, 2017 by Olle Hellman. 
 <br />
-#### Tdep_potFCs_ALM:<br />
-This gives an example how to self-consistently compute second and thirdorder force constants. I first compute the FC2 and FC3
-use the finite displacement method, and obtain the first generation of eigenvectors. Then I used Hellman's method to compute
-the new set of FC2 and FC3, and a new set of eigenvectors. This process is iterated. Convergence of phonon bandstructure can
-usually be achieved after ~ 5 iterations. 
-<br />
+
 #### Thermo_Disps_DFT and Thermo_Disps_Pot:<br />
 These two folders implemented the code to randomly generate snapshots, using the Olle Hellman's stochastic method, which can be
 used as training datasets for TDEP, similar to AIMD snapshots.
