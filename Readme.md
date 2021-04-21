@@ -22,7 +22,7 @@ Currently, this package is based on the following packages:<br />
 
 ase 3.20.1<br /> 
 phonopy 2.7.1 by A. Togo: https://phonopy.github.io/phonopy <br />
-lammps (24 Aug 2020)<br />
+lammps (24 Aug 2020) by Sandia Nation Lab: https://lammps.sandia.gov/doc/Install_tarball.html<br />
 quippy & GAP by A. Brtok and Csanyi et al.: https://libatoms.github.io/GAP/installation.html <br /> 
 ALM 2.0.0 by Tadano: https://alm.readthedocs.io/en/develop/ <br />
 thirorder.py 1.1.0 by Prof. Wu Li and Prof. Mingo: http://www.shengbte.org/downloads <br />
