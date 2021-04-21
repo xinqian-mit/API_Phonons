@@ -100,10 +100,9 @@ is dynamically unstable at 0K. Also included a script for relaxing cell structur
 quippy potential objects can set as ase calculators using atom.set_calculator(). Then
 the cell can be relaxed using optimize module from ase.
 <br />
-The file RandDisps_SelfConsist_FC2_FC3.py and RandDisps_SelfConsit_FC2_GAP_ALM.py give examples how to self-consistently compute second and thirdorder force constants. I fi>
-use the finite displacement method, and obtain the first generation of eigenvectors. Then I used H>
-the new set of FC2 and FC3, and a new set of eigenvectors. This process is iterated. Convergence o>
-usually be achieved after ~ 5 iterations.
+The file RandDisps_SelfConsist_FC2_FC3.py and RandDisps_SelfConsit_FC2_GAP_ALM.py give examples on how to self-consistently compute second 
+and thirdorder force constants. I first use the finite displacement method, and obtain the first generation of eigenvectors. Then I used 
+the new set of FC2 and FC3, and a new set of eigenvectors. This process is iterated. Convergence can usually be achieved after ~ 5 iterations.
 <br />
 #### EIM_LattDyn_NaCl:<br />
 This gives example how we can interface lammps and phonopy to perform lattice dynamics based on the EIM potential supported

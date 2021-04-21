@@ -17,10 +17,11 @@ from phonopy.interface.calculator import get_default_physical_units
 from phonopy.interface.alm import get_fc2
 import os
 import shutil
-import API_quippy_phonopy_VASP as api_qpv
+import API_phonopy as api_ph
+import API_quippy as api_q
 import API_alamode as api_alm
 import sys
-import API_quippy_thirdorder as shengfc3
+import API_thirdorder as shengfc3
 import thirdorder_core
 import thirdorder_common
 
@@ -86,8 +87,8 @@ FC2,FC3 = api_alm.get_fc2_fc3(phonon,displacements,forces,is_compact_fc=False,op
 # In[7]:
 
 
-api_qpv.write_ShengBTE_FC2(FC2, filename='FORCE_CONSTANTS_2ND')
-prim = api_qpv.phonopyAtoms_to_aseAtoms(phonon.get_primitive())
+api_ph.write_ShengBTE_FC2(FC2, filename='FORCE_CONSTANTS_2ND')
+prim = api_ph.phonopyAtoms_to_aseAtoms(phonon.get_primitive())
 api_alm.write_shengBTE_fc3('FORCE_CONSTANTS_3RD',FC3,phonon,prim)
 
 
@@ -106,7 +107,7 @@ if NAC == True:
     phonon._nac_params=nac_params
     phonon._set_dynamical_matrix()
     
-bands=api_qpv.qpoints_Band_paths(Qpoints,Band_points)
+bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
 phonon.set_band_structure(bands,is_eigenvectors=True,labels=band_labels)
 phonon.write_yaml_band_structure()
 bs_plt=phonon.plot_band_structure()
@@ -115,15 +116,6 @@ bs_plt.ylabel("Frequency (THz)",fontsize=16)
 bs_plt.xticks(fontsize=16)
 bs_plt.yticks(fontsize=16)
 bs_plt.savefig("Bandstructure.png",dpi=300,bbox_inches='tight')
-
-
-# In[9]:
-
-
-scell = api_qpv.phonopyAtoms_to_aseAtoms(phonon.get_supercell())
-
-
-# In[ ]:
 
 
 

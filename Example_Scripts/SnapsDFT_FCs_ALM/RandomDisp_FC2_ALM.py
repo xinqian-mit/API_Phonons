@@ -13,7 +13,7 @@ from phonopy.interface.calculator import get_default_physical_units
 from phonopy.interface.alm import get_fc2
 import os
 import shutil
-import API_quippy_phonopy_VASP as api_qpv
+import API_phonopy as api_ph
 
 Qpoints=np.array([[1e-4,1e-4,1.0],[0.5,0.5,1.0],[3./8,3./8,3./4],[0.0,0.0,0.0],[0.5,0.5,0.5]])
 band_labels=['$\Gamma$','X','K','$\Gamma$','L']
@@ -65,8 +65,8 @@ if NAC == True:
 
 
 
-api_qpv.write_ShengBTE_FC2(phonon.get_force_constants(), filename='FORCE_CONSTANTS_2ND')
-bands=api_qpv.qpoints_Band_paths(Qpoints,Band_points)
+api_ph.write_ShengBTE_FC2(phonon.get_force_constants(), filename='FORCE_CONSTANTS_2ND')
+bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
 phonon.set_band_structure(bands,is_eigenvectors=True,labels=band_labels)
 phonon.write_yaml_band_structure()
 bs_plt=phonon.plot_band_structure()
