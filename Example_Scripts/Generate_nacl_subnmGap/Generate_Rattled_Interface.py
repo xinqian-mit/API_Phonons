@@ -6,13 +6,13 @@ from ase.io import write
 import ase.build
 import numpy as np
 from phonopy.structure.atoms import PhonopyAtoms
-import API_quippy_phonopy_VASP as api_qpv
+import API_phonopy as api_ph
+import API_quippy as api_q
 import API_phonopy_lammps as api_plmp
 from phonopy import Phonopy
 import phonopy.file_IO as PhonIO
 from phonopy.interface.calculator import get_default_physical_units
 import copy as cp
-from joblib import Parallel, delayed
 import multiprocessing as mp
 import phonopy.interface.vasp as phonVasp
 
@@ -24,7 +24,7 @@ gp_xml_file = '../Dielectric_function_NaCl/soap_n12l11_6.0cut_coul/gp_NaCl_soap_
 a = 5.65414946767 # lattice constant of NaCl
 
 Temp_rattle = [300.,300]
-Nsnaps = 0 #50000 # Number of snapshots
+Nsnaps = 2 #50000 # Number of snapshots
 nacl = crystal(['Na', 'Cl'], [(0, 0, 0), (0.5, 0.5, 0.5)], spacegroup=225,
                cellpar=[a, a, a, 90, 90, 90])
 
@@ -67,7 +67,7 @@ phonVasp.write_vasp('Interface0_'+facestr+'_'+str(d_gap)+'A.POSCAR',Interface0)
 
 if Nsnaps > 0:
 
-    slab_ph = api_qpv.aseAtoms_to_phonopyAtoms(slab)
+    slab_ph = api_ph.aseAtoms_to_phonopyAtoms(slab)
 
     phonon = Phonopy(slab_ph,np.eye(3)) # do the Gamma point calculation of the unit prim cell
     phonon.generate_displacements(distance=0.01) # perturbate the supcercell to obtain eigenvectors.
@@ -75,12 +75,12 @@ if Nsnaps > 0:
     Scell_ph = phonon.get_supercell()
     Scell_disps_quip = []
     for scell in Scell_disps:
-        Scell_disps_quip.append(api_qpv.phonopyAtoms_to_aseAtoms(scell)) # pass the phonopy atom to ase object.
+        Scell_disps_quip.append(api_ph.phonopyAtoms_to_aseAtoms(scell)) # pass the phonopy atom to ase object.
     print('Supercell used for Lattice Dynamics: '+str(Nrepeat))
     print('Number of atoms in the slab: '+str(Scell_ph.get_number_of_atoms()))
     print('Number of Supercell calculations: '+str(len(Scell_disps)))
     # Calculate forces
-    force_quip = api_qpv.Parallel_calc_force_sets_GAP(gp_xml_file,Scell_disps_quip)
+    force_quip = api_q.calc_force_sets_GAP(gp_xml_file,Scell_disps_quip)
     phonon.set_forces(force_quip)
     PhonIO.write_FORCE_SETS(phonon.get_displacement_dataset()) # write forces & displacements to FORCE_SET
     force_set=PhonIO.parse_FORCE_SETS() # parse force_sets
@@ -99,15 +99,15 @@ if Nsnaps > 0:
 
 
 # calculate at Gamma point
-    bands=api_qpv.qpoints_Band_paths(np.array([[0.,0.,0.]]),1)
+    bands=api_ph.qpoints_Band_paths(np.array([[0.,0.,0.]]),1)
     phonon.set_band_structure(bands, is_eigenvectors=True)
 
-    u_disps1,v_disps1 = api_qpv.Parallel_thermo_dispVel_along_eig(phonon,Temp_rattle[0],Nsnaps) # rattle slab1
-    u_disps2,v_disps2 = api_qpv.Parallel_thermo_dispVel_along_eig(phonon,Temp_rattle[1],Nsnaps) # rattle slab2
+    u_disps1,v_disps1 = api_ph.Parallel_thermo_dispVel_along_eig(phonon,Temp_rattle[0],Nsnaps) # rattle slab1
+    u_disps2,v_disps2 = api_ph.Parallel_thermo_dispVel_along_eig(phonon,Temp_rattle[1],Nsnaps) # rattle slab2
 
     u_disps = np.concatenate((u_disps1,u_disps2),axis=1)
     v_disps = np.concatenate((v_disps1,v_disps2),axis=1)
 
-    Interface_snaps = api_qpv.Generate_Supercells_with_Disps(Interface0,u_disps,v_disps)
-    api_qpv.write_Supercells_VASP(Interface_snaps,'d_gap'+str(d_gap)+'A')
+    Interface_snaps = api_ph.Generate_Supercells_with_Disps(Interface0,u_disps,v_disps)
+    api_ph.write_Supercells_VASP(Interface_snaps,'d_gap'+str(d_gap)+'A')
 

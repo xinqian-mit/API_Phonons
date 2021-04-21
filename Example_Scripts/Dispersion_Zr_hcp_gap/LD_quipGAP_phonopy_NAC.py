@@ -8,8 +8,8 @@ import phonopy.interface.vasp as Intf_vasp
 from phonopy.structure.atoms import PhonopyAtoms
 import phonopy.file_IO as PhonIO
 from phonopy.interface.calculator import get_default_physical_units
-import API_quippy_phonopy_VASP as api_qpv # remember to set this module to python path
-
+import API_quippy as api_q # remember to set this module to python path
+import API_phonopy as api_ph
 
 gp_xml_file="gp_new_DB2-4.xml"
 Qpoints=[[0.0,0.0,0.0],[1./3,1./3,0.0],[0.5,0.0,0.0],[0.0,0.0,0.0],[0.0,0.0,0.5]]
@@ -30,11 +30,11 @@ Scells_phonopy = phonon_scell.get_supercells_with_displacements() # This returns
 # convert phonopy atoms objects to quippy atom objects
 Scells_quippy =[]
 for scell in Scells_phonopy:
-    Scells_i=api_qpv.phonopyAtoms_to_aseAtoms(scell) 
+    Scells_i=api_ph.phonopyAtoms_to_aseAtoms(scell) 
     Scells_quippy.append(Scells_i)
 
 # calculate forces and convert to phonopy force_sets
-force_gap_scells = api_qpv.calc_force_sets_GAP(gp_xml_file,Scells_quippy)
+force_gap_scells = api_q.calc_force_sets_GAP(gp_xml_file,Scells_quippy)
 
 #parse force set and calc force constants
 phonon_scell.set_forces(force_gap_scells)
@@ -56,10 +56,10 @@ if NAC == True:
 
 phonon_scell.produce_force_constants()
 phonon_scell.symmetrize_force_constants()
-api_qpv.write_ShengBTE_FC2(phonon_scell.get_force_constants(), filename='FORCE_CONSTANTS_2ND')
+api_ph.write_ShengBTE_FC2(phonon_scell.get_force_constants(), filename='FORCE_CONSTANTS_2ND')
 
 # calc and plot bandstructure
-bands=api_qpv.qpoints_Band_paths(Qpoints,Band_points)
+bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
 phonon_scell.set_band_structure(bands,labels=band_labels)
 phonon_scell.write_yaml_band_structure()
 bs_plt=phonon_scell.plot_band_structure()

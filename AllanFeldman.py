@@ -1,8 +1,8 @@
 import numpy as np
 from phonopy.units import VaspToTHz
 from phonopy.harmonic.force_constants import similarity_transformation
-from phonopy.phonon.degeneracy import degenerate_sets
-
+#from phonopy.phonon.degeneracy import degenerate_sets
+from numba import njit 
 
 def get_dq_dynmat_q(phonon,q):
     """
@@ -59,53 +59,43 @@ def symmetrize_gv(phonon,q,gv):
          
         
             
-            
-def get_Vmat_modes_q(phonon,q,ddms,factor = VaspToTHz): # Dornadio's v operators.
+           
+def get_Vmat_modePair_q(phonon,q,ModePair,ddms,factor = VaspToTHz): # Dornadio's v operators.
     dm =  phonon.get_dynamical_matrix_at_q(q)
     #frequencies,eigvecs = phonon.get_frequencies_with_eigenvectors(q)
     Ns,Ns1 = dm.shape
-    Vmat = np.zeros([Ns,Ns,3],dtype='complex128')
-    Vmat_sym = np.zeros([Ns,Ns,3],dtype='complex128')
+    Vmat_sr = np.zeros(3,dtype='complex128')
+    #Vmat_rs = np.zeros(3,dtype='complex128')
+    Vmat_sym_sr = np.zeros(3,dtype='complex128')
+    #Vmat_sym_rs = np.zeros(3,dtype='complex128')
     
     eigvals, eigvecs = np.linalg.eigh(dm)
     eigvals = eigvals.real
-    freqs = np.sqrt(abs(eigvals)) * np.sign(eigvals) * factor
-    
-    #deg_sets = degenerate_sets(freqs)
-    #gv = np.zeros((len(freqs), 3), dtype='double', order='C')
-    
-    #pos = 0 
-    #eig_rot = np.zeros_like(eigvecs,dtype='complex128')
-    #for deg in deg_sets: # treat degeneracy
-         
-    #    gv[pos:pos+len(deg)],rot_eigsets = _perturb_D(ddms, eigvecs[:, deg])
-        
-        
-        #eig_rot[:,pos:pos+len(deg)] = rot_eigsets
-    #    pos += len(deg)    
+    freqs = np.sqrt(abs(eigvals)) * np.sign(eigvals) * factor  
     
     ddm_q = ddms[1:]
-    for s in np.arange(Ns):
-        eig = eigvecs[:,s]
-        fs = freqs[s]
-        #Vmat[s,s,:] = gv[s]*(factor**2)/2/fs
-        #Vmat_sym[s,s,:] = symmetrize_gv(phonon,q,Vmat[s,s,:])
+    
+    s = ModePair[0]
+    r = ModePair[1]
+    
+    eig = eigvecs[:,s]
+    ws = freqs[s]*np.pi*2    
+    
+    eig1 = eigvecs[:,r]
+    wr = freqs[r]*np.pi*2  
+    
+    for i in range(3):
+        Vmat_sr[i]=np.dot(np.conj(eig),np.matmul(ddm_q[i],eig1))*(factor**2)/2/np.sqrt(np.abs(ws*wr))
+        #Vmat_rs[i]=np.dot(np.conj(eig1),np.matmul(ddm_q[i],eig))*(factor**2)/2/np.sqrt(np.abs(ws*wr))
         
-        for s1 in np.arange(s,Ns):
-            eig1 = eigvecs[:,s1]
-            fs1 = freqs[s1]
-            
-            for i in range(3):
-                Vmat[s,s1,i]=np.dot(np.conj(eig),np.matmul(ddm_q[i],eig1))*(factor**2)/2/np.sqrt(fs*fs1)
-                Vmat[s1,s,i]=np.dot(np.conj(eig1),np.matmul(ddm_q[i],eig))*(factor**2)/2/np.sqrt(fs*fs1)
-            
-            Vmat_sym[s,s1,:] = symmetrize_gv(phonon,q,Vmat[s,s1,:])
-            Vmat_sym[s1,s,:] = symmetrize_gv(phonon,q,Vmat[s1,s,:])
-            
-            #print(Vmat[s,s1,:])
-            #print(Vmat_sym[s,s1,:])
-                
-    return Vmat_sym
+    Vmat_sym_sr = symmetrize_gv(phonon,q,Vmat_sr)
+    #Vmat_sym_rs = symmetrize_gv(phonon,q,Vmat_rs)
+    
+    
+    
+    return Vmat_sym_sr
+    
+
                 
             
 
@@ -133,35 +123,65 @@ def _perturb_D(ddms, eigsets):
 
     return np.transpose(gv),rot_eigsets
             
+def degenerate_sets(freqs,width=1e-4,threshold=1e-4):
+    indices = []
+    done = []
+    for i in range(len(freqs)):
+        if i in done:
+            continue
+        else:
+            f_set = [i]
+            done.append(i)
+        for j in range(i + 1, len(freqs)):
+            lorenz_v = Lorentizan(np.abs(freqs[f_set] - freqs[j]),width)
+            if ( lorenz_v < threshold).any():
+            #if (np.abs(freqs[f_set] - freqs[j]) < cutoff).any():
+                f_set.append(j)
+                done.append(j)
+        indices.append(f_set[:])
+
+    return indices
+
+@njit
+def Lorentizan(x,width):
+    return 1/np.pi*width/2/(x*x + width*width/4)
+    
         
-        
-        
-def AF_diffusivity_q(phonon,q,factor = VaspToTHz):
+def AF_diffusivity_q(phonon,q,factor = VaspToTHz,width=1e-4,threshold=1e-4):
     A2m = 1e-10
     THz2Hz = 1e12
     ddms = get_dq_dynmat_q(phonon,q)
     freqs = phonon.get_frequencies(q)
-    Vmat_q = get_Vmat_modes_q(phonon,q,ddms,factor) # AngstromTHz = 100m/s
+    if np.linalg.norm(q) < 1e-5:
+        q_shifted = np.array([1e-5,1e-5,1e-5])
+        ddms = get_dq_dynmat_q(phonon,q_shifted)
+        # central derivative, need to shift by small amount to obtain the correct derivative. 
+        # Otherwise will dD/dq be zero due to the fact D(q)=D(-q). 
+    #Vmat_q = get_Vmat_modes_q(phonon,q_shifted,ddms,factor) # AngstromTHz = 100m/s
     
-    SV = np.zeros_like(Vmat_q,dtype='complex128')
+    #SV = np.zeros_like(Vmat_q,dtype='complex128')
     
     Diffusivity = np.zeros(len(freqs))
     
-    deg_sets = degenerate_sets(freqs)
+    deg_sets = degenerate_sets(freqs,width,threshold) #degenerate_sets(freqs)
     
     pos = 0
     for deg in deg_sets:
         Ndeg = len(deg)
         for ideg in range(Ndeg):
             s = deg[ideg]
+            
             ws = freqs[s]*2*np.pi
             for jdeg in range(Ndeg):
-                s1 = deg[jdeg]
-                ws1 = freqs[s1]*2*np.pi
+                r = deg[jdeg]
+                wr = freqs[r]*2*np.pi
                 
-                SV = Vmat_q[s,s1,:]*(ws+ws1)/2
-                if s != s1:
-                    print(s,s1,np.dot(np.conj(SV),SV))
+                #SV = Vmat_q[s,s1,:]*(ws+ws1)/2
+                if s != r:
+                    Vmat_sr = get_Vmat_modePair_q(phonon,q_shifted,[s,r],ddms,factor)
+                    SV = Vmat_sr*(ws+wr)/2
+                    
+                    #print(s,s1,np.dot(np.conj(SV),SV))
                     Diffusivity[s] += np.dot(np.conj(SV),SV).real
                     #Diffusivity[s1] += np.dot(np.conj(SV),SV)
                 

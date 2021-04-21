@@ -19,7 +19,7 @@ import phonopy.interface.vasp as Intf_vasp
 from phonopy.structure.atoms import PhonopyAtoms
 from phonopy.interface.calculator import get_default_physical_units
 import phonopy.file_IO as PhonIO
-import API_quippy_phonopy_VASP as api_qpv # remember to set this module to python path
+import API_phonopy as api_ph # remember to set this module to python path
 import phonopy.units as Units
 import copy as cp
 import os
@@ -80,17 +80,17 @@ if NAC == True:
 
 
 # set qpoints along BZ path
-bands=api_qpv.qpoints_Band_paths(Qpoints,Band_points)
+bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
 phonon_scell.set_band_structure(bands, is_eigenvectors=True)
 phonon_scell.set_mesh(qmesh, is_eigenvectors=True)
 phonon_scell.write_yaml_band_structure()
-eigvecs=api_qpv.get_reshaped_eigvecs(phonon_scell)
+eigvecs=api_ph.get_reshaped_eigvecs(phonon_scell)
 
 
 # In[7]:
 
 
-u_disps = api_qpv.thermo_disp_along_eig(phonon_scell,Temperature,NSnaps)
+u_disps = api_ph.thermo_disp_along_eig(phonon_scell,Temperature,NSnaps)
 Scell_snaps = [];
 pos0 = Supercell.get_positions();
 
@@ -104,7 +104,7 @@ for isnap in range(NSnaps):
     Scell_tmp.set_positions(pos)
     Scell_snaps.append(Scell_tmp)
 
-api_qpv.write_Supercells_VASP(Scell_snaps,directory)
+api_ph.write_Supercells_VASP(Scell_snaps,directory)
 
 
 # In[11]:
@@ -113,16 +113,16 @@ api_qpv.write_Supercells_VASP(Scell_snaps,directory)
 if not os.path.exists(directory):
     os.mkdir(directory)
 
-api_qpv.write_Supercells_VASP(Scell_snaps,directory)
+api_ph.write_Supercells_VASP(Scell_snaps,directory)
 
 
 # Output xyz file
 Scell_snaps_ase = []
 for scell in Scell_snaps:
-    Scell_snaps_ase.append(api_qpv.phonopyAtoms_to_aseAtoms(scell))
+    Scell_snaps_ase.append(api_ph.phonopyAtoms_to_aseAtoms(scell))
 
 
-api_qpv.write_xyz_aseAtomsList(Scell_snaps_ase,Snap_file)
+api_ph.write_xyz_aseAtomsList(Scell_snaps_ase,Snap_file)
 
 
 # In[ ]:

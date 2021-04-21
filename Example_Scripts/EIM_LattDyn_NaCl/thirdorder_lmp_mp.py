@@ -2,14 +2,14 @@
 # coding: utf-8
 
 import numpy as np
-import API_quippy_thirdorder as FC3
+import API_thirdorder as FC3
 import thirdorder_core
 import thirdorder_common
 from phonopy import Phonopy
 import phonopy.interface.vasp as Intf_vasp
 from phonopy.structure.atoms import PhonopyAtoms
 import phonopy.file_IO as PhonIO
-import API_quippy_phonopy_VASP as api_qpv # remember to set this module to python path
+import API_phonopy as api_ph # remember to set this module to python path
 import multiprocessing as mp
 import API_phonopy_lammps as api_pl
 import os
@@ -36,7 +36,7 @@ def calc_phipart(i,e,nirred,ntot,p,cmds,sposcar,namepattern,atomtypes='atomic'):
         lammps_header=['units metal',
                    'atom_style '+atomtypes,
                    'atom_modify map array sort 0 0']
-        scell = api_qpv.phonopyAtoms_to_aseAtoms(Scell)
+        scell = api_ph.phonopyAtoms_to_aseAtoms(Scell)
         
         lmp = LAMMPSlib(lmpcmds=cmds, log_file='log.'+str(i),lammps_header=lammps_header)
         #print(lmp)

@@ -28,9 +28,9 @@ from Fourthorder_common import *
 import phonopy.interface.vasp as Intf_vasp
 import os
 from ase.calculators.lammpslib import LAMMPSlib
-import API_quippy_phonopy_VASP as api_qpv 
+import API_phonopy as api_ph 
 import API_phonopy_lammps as api_pl
-import API_quippy_thirdorder as FC3
+import API_thirdorder as FC3
 
 
 if __name__=="__main__":
@@ -120,7 +120,7 @@ if __name__=="__main__":
             FC3.write_POSCAR(dsposcar,filename)
             
             Scell = Intf_vasp.read_vasp(filename)
-            scell = api_qpv.phonopyAtoms_to_aseAtoms(Scell)
+            scell = api_ph.phonopyAtoms_to_aseAtoms(Scell)
             os.remove(filename)
             
             lmp = LAMMPSlib(lmpcmds=cmds, log_file='log.'+str(i)+'.'+str(n),lammps_header=lammps_header)

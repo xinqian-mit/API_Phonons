@@ -472,7 +472,7 @@ def _fcs_to_sheng(fc3, phonon, prim,symprec, cutoff, fc_tol):
     #print(cell)
     #ScellMat = phonon.get_supercell_matrix()
     supercell_ph = phonon.get_supercell()
-    from API_quippy_phonopy_VASP import phonopyAtoms_to_aseAtoms
+    from API_phonopy import phonopyAtoms_to_aseAtoms
     scell = phonopyAtoms_to_aseAtoms(supercell_ph)
     
     supercell = Supercell(scell, prim, symprec)

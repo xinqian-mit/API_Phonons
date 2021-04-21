@@ -3,14 +3,15 @@
 # usage:
 # thirdorder_gap na nb nc cutoff( -i|nm ) "directory/gp_new.xml"
 import numpy as np
-import API_quippy_thirdorder as FC3
+import API_thirdorder as FC3
 import thirdorder_core
 import thirdorder_common
 from phonopy import Phonopy
 import phonopy.interface.vasp as Intf_vasp
 from phonopy.structure.atoms import PhonopyAtoms
 import phonopy.file_IO as PhonIO
-import API_quippy_phonopy_VASP as api_qpv # remember to set this module to python path
+import API_quippy as api_q
+import API_phonopy as api_ph
 import os, glob
 import os.path
 import shutil
@@ -56,7 +57,7 @@ if __name__ == "__main__":
 # looking for irreducible fc3
     wedge = thirdorder_core.Wedge(poscar, sposcar, symops, dmin, nequi, shifts,frange)
     list4 = wedge.build_list4()
-    print(list4)
+    #print(list4)
     nirred = len(list4)
     nruns = 4 * nirred
     width = len(str(4 * (len(list4) + 1)))
@@ -79,8 +80,8 @@ if __name__ == "__main__":
             Scell = Intf_vasp.read_vasp(filename)
             os.remove(filename)
         #print number
-            Scell_quip = api_qpv.phonopyAtoms_to_aseAtoms(Scell)
-            force = np.array(api_qpv.calc_force_GAP(gp_xml_file,Scell_quip))
+            Scell_quip = api_ph.phonopyAtoms_to_aseAtoms(Scell)
+            force = np.array(api_q.calc_force_GAP(gp_xml_file,Scell_quip))
             phipart[:, i, :] -= isign * jsign * force[p, :].T   
      
     phipart =  phipart/(400. * thirdorder_common.H * thirdorder_common.H)

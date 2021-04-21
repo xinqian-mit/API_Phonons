@@ -3,14 +3,15 @@
 # usage:
 # python3 thirdorder_gap_mp.py na nb nc cutoff( -i|nm ) n_processes "directory/gp_new.xml"
 import numpy as np
-import API_quippy_thirdorder as FC3
+import API_thirdorder as FC3
 import thirdorder_core
 import thirdorder_common
 from phonopy import Phonopy
 import phonopy.interface.vasp as Intf_vasp
 from phonopy.structure.atoms import PhonopyAtoms
 import phonopy.file_IO as PhonIO
-import API_quippy_phonopy_VASP as api_qpv # remember to set this module to python path
+import API_quippy as api_q
+import API_phonopy as api_ph
 import os, glob
 import os.path
 import shutil
@@ -38,8 +39,8 @@ def calc_phipart(i,e,nirred,ntot,p,gp_xml_file,sposcar,namepattern):
         Scell = Intf_vasp.read_vasp(filename)
         os.remove(filename)
         #print number
-        Scell_quip = api_qpv.phonopyAtoms_to_aseAtoms(Scell)
-        force = np.array(api_qpv.calc_force_GAP(gp_xml_file,Scell_quip))  
+        Scell_quip = api_ph.phonopyAtoms_to_aseAtoms(Scell)
+        force = np.array(api_q.calc_force_GAP(gp_xml_file,Scell_quip))  
         phi_i -= (isign * jsign * force[p, :].T) # put the result in a queue object, which will be retrieved by get
     #phipart[:,i,:] = phi_i
     return (i,phi_i)

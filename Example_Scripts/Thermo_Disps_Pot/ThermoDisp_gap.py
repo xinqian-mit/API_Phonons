@@ -10,7 +10,8 @@ import phonopy.interface.vasp as Intf_vasp
 from phonopy.structure.atoms import PhonopyAtoms
 import phonopy.file_IO as PhonIO
 from phonopy.interface.calculator import get_default_physical_units
-import API_quippy_phonopy_VASP as api_qpv # remember to set this module to python path
+import API_phonopy as api_ph # remember to set this module to python path
+import API_quippy as api_q # remember to set this module to python path
 import copy as cp
 # set-up latex 
 
@@ -40,12 +41,12 @@ Scells_phonopy = phonon_scell.get_supercells_with_displacements() # This returns
 # convert phonopy atoms objects to quippy atom objects
 Scells_quippy=[]
 for scell in Scells_phonopy:
-    Scells_quippy.append(api_qpv.phonopyAtoms_to_aseAtoms(scell))
+    Scells_quippy.append(api_ph.phonopyAtoms_to_aseAtoms(scell))
 
 
 # calculate forces and convert to phonopy force_sets
-#force_quip_scells = api_qpv.calc_force_sets_quip(pot_flag,param_str,Scells_quippy)
-force_quip_scells = api_qpv.calc_force_sets_GAP(gp_xml_file,Scells_quippy)
+#force_quip_scells = api_q.calc_force_sets_quip(pot_flag,param_str,Scells_quippy)
+force_quip_scells = api_q.calc_force_sets_GAP(gp_xml_file,Scells_quippy)
 
 #parse force set and calc force constants
 phonon_scell.set_forces(force_quip_scells)
@@ -59,15 +60,15 @@ phonon_scell.symmetrize_force_constants()
 
 
 # set qpoints along BZ path
-bands=api_qpv.qpoints_Band_paths(Qpoints,Band_points)
+bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
 phonon_scell.set_band_structure(bands, is_eigenvectors=True)
 phonon_scell.set_mesh(qmesh, is_eigenvectors=True)
 phonon_scell.write_yaml_band_structure()
-eigvecs=api_qpv.get_reshaped_eigvecs(phonon_scell)
+eigvecs=api_ph.get_reshaped_eigvecs(phonon_scell)
 
 
 
-u_disps = api_qpv.thermo_disp_along_eig(phonon_scell,Temperature,NSnaps)
+u_disps = api_ph.thermo_disp_along_eig(phonon_scell,Temperature,NSnaps)
 Scell_snaps = [];
 Supercell = phonon_scell.get_supercell()
 Intf_vasp.write_vasp("SPOSCAR_NaCl",Supercell)
@@ -79,14 +80,14 @@ for isnap in range(NSnaps):
     pos = pos0 + u_disps[isnap]
     Scell_tmp.set_positions(pos)
     Scell_snaps.append(Scell_tmp)
-    snaps_ase.append(api_qpv.phonopyAtoms_to_aseAtoms(Scell_tmp))
+    snaps_ase.append(api_ph.phonopyAtoms_to_aseAtoms(Scell_tmp))
 
-api_qpv.write_Supercells_VASP(Scell_snaps,directory)
+api_ph.write_Supercells_VASP(Scell_snaps,directory)
 
 
 # Output xyz file
 
-api_qpv.write_xyz_aseAtomsList(snaps_ase,Snap_file)
+api_ph.write_xyz_aseAtomsList(snaps_ase,Snap_file)
 
 
 

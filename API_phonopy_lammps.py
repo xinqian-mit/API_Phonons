@@ -14,7 +14,8 @@ import ase
 import multiprocessing as mp
 #from joblib import Parallel, delayed  
 import copy as cp
-import API_quippy_phonopy_VASP as api_qpv
+import API_phonopy as api_ph
+from matscipy.neighbours import neighbour_list
 from numba import njit 
 ## ------------------------------------- Get Lammps box parameters -----------------------------------------------------##
 
@@ -86,7 +87,7 @@ def calc_lmp_force_sets(cmds,Scells_ph,atomtypes='atomic',logfile='log.lammps',l
     for scell_ph in Scells_ph:
         lammps = LAMMPSlib(lmpcmds=cmds, log_file=logfile,lammps_header=lammps_header,
                            create_atoms=create_atoms, create_box=create_box, boundary=boundary, keep_alive=keep_alive) # lammps obj has to be in the loop.
-        scell = api_qpv.phonopyAtoms_to_aseAtoms(scell_ph)
+        scell = api_ph.phonopyAtoms_to_aseAtoms(scell_ph)
         scell.set_calculator(lammps)
         forces = scell.get_forces()
         force_scells.append(forces.tolist())
@@ -114,7 +115,7 @@ def calc_lmp_force(cmds,Scell_ph,atomtypes='atomic',logfile='log.lammps',lammps_
 
     lammps = LAMMPSlib(lmpcmds=cmds, log_file=logfile,lammps_header=lammps_header,
                        create_atoms=create_atoms, create_box=create_box, boundary=boundary, keep_alive=keep_alive) # lammps obj has to be in the loop.
-    scell = api_qpv.phonopyAtoms_to_aseAtoms(Scell_ph)
+    scell = api_ph.phonopyAtoms_to_aseAtoms(Scell_ph)
     scell.set_calculator(lammps)
     forces = scell.get_forces()
     
@@ -146,7 +147,7 @@ def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammp
             ui[iat][0]=ur[iat][0]*latt_vec[0][0]+ur[iat][1]*latt_vec[1][0]+ur[iat][2]*latt_vec[2][0] #get disps
             ui[iat][1]=ur[iat][0]*latt_vec[0][1]+ur[iat][1]*latt_vec[1][1]+ur[iat][2]*latt_vec[2][1]
             ui[iat][2]=ur[iat][0]*latt_vec[0][2]+ur[iat][1]*latt_vec[1][2]+ur[iat][2]*latt_vec[2][2]
-        scell_ase = api_qpv.phonopyAtoms_to_aseAtoms(scell)
+        scell_ase = api_ph.phonopyAtoms_to_aseAtoms(scell)
         fi = calc_lmp_force(cmds,scell_ase,atomtypes,logfile,lammps_header=lammps_header,
                             create_atoms=create_atoms, create_box=create_box, boundary=boundary, keep_alive=keep_alive) # get forces
         displacements[i][:][:]=ui
@@ -352,7 +353,6 @@ def write_R0(prefix,pcell,scell): # phonopy style R0.
                         
     fid.close()
                         
-        
 
 
 def write_lmp_dump(filename,Cell_snaps):
@@ -514,5 +514,15 @@ def PartRatio_mode(evec):
             
                     
        
-    
+# calculate radial distribution function
+def calc_rdf(Cell,rdf_cutoff,rdf_nbins):
+    # use ase object for calculating rdf.
+    r = neighbour_list('d', Cell, cutoff=rdf_cutoff)
+    rdf, bin_edges = np.histogram(r, bins=rdf_nbins, range=(0, rdf_cutoff))
+    # normalize by bin volume and total number of atoms
+    rdf = rdf / (len(Cell) * 4*np.pi/3 * (bin_edges[1:]**3-bin_edges[:-1]**3))
+    # normalize by cell volume
+    rdf /= len(Cell)/Cell.get_volume()
+    bin_centers = (bin_edges[1:]+bin_edges[:-1])/2    
+    return bin_centers,rdf        
     

@@ -8,7 +8,7 @@ from ase.io import write
 import ase.build
 import numpy as np
 from phonopy.structure.atoms import PhonopyAtoms
-import API_quippy_phonopy_VASP as api_qpv
+import API_phonopy as api_ph
 import API_phonopy_lammps as api_pl
 from phonopy import Phonopy
 import phonopy.file_IO as PhonIO
@@ -28,7 +28,7 @@ nacl = crystal(['Na', 'Cl'], [(0, 0, 0), (0.5, 0.5, 0.5)], spacegroup=225,
 
 phonon = Phonopy(nacl,np.diag(Nrepeat),primitive_matrix=prim)
 phonon.generate_displacements(distance=0.03) # vasp
-Scell0 = api_qpv.phonopyAtoms_to_aseAtoms(phonon.get_supercell())
+Scell0 = api_ph.phonopyAtoms_to_aseAtoms(phonon.get_supercell())
 
 Scells_ph = phonon.get_supercells_with_displacements() # This returns a list of Phononpy atoms object
 
@@ -58,10 +58,10 @@ if NAC == True:
 
 phonon.produce_force_constants()
 phonon.symmetrize_force_constants()
-api_qpv.write_ShengBTE_FC2(phonon.get_force_constants(), filename='FORCE_CONSTANTS_2ND')
+api_ph.write_ShengBTE_FC2(phonon.get_force_constants(), filename='FORCE_CONSTANTS_2ND')
 
 # calc and plot bandstructure
-bands=api_qpv.qpoints_Band_paths(Qpoints,Band_points)
+bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
 phonon.set_band_structure(bands,is_eigenvectors=True,labels=band_labels)
 phonon.write_yaml_band_structure()
 bs_plt=phonon.plot_band_structure()

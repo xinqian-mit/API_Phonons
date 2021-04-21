@@ -3,7 +3,8 @@ from phonopy.structure.atoms import PhonopyAtoms
 from phonopy import Phonopy
 import phonopy.file_IO as PhonIO
 import phonopy.interface.vasp as Intf_vasp
-import API_quippy_phonopy_VASP as api_qpv
+import API_quippy as api_q
+import API_phonopy as api_ph
 from phonopy.interface.calculator import get_default_physical_units
 
 
@@ -17,9 +18,9 @@ phonon_scell.generate_displacements(distance=0.03) # vasp
 Scells_phonopy = phonon_scell.get_supercells_with_displacements() # This returns a list of Phononpy atoms object
 Scells_qp = []
 for scell in Scells_phonopy:
-    Scells_qp.append(api_qpv.phonopyAtoms_to_aseAtoms(scell))
+    Scells_qp.append(api_ph.phonopyAtoms_to_aseAtoms(scell))
 
-force_gap_scells = api_qpv.calc_force_sets_GAP(gp_xml_file,Scells_qp)
+force_gap_scells = api_q.calc_force_sets_GAP(gp_xml_file,Scells_qp)
 
 #parse force set and calc force constants
 phonon_scell.set_forces(force_gap_scells)
@@ -43,9 +44,9 @@ PhonIO.write_FORCE_CONSTANTS(phonon_scell.get_force_constants(), filename='FORCE
 
 
 phonon_scell.set_mesh(Ncells, is_gamma_center=True, is_eigenvectors=True)
-eigvecs = api_qpv.get_reshaped_eigvecs_mesh(phonon_scell)
+eigvecs = api_ph.get_reshaped_eigvecs_mesh(phonon_scell)
 
-api_qpv.write_unitcell_eigvecs_qmesh_gulp(Eigfile,eigvecs,phonon_scell)
+api_ph.write_unitcell_eigvecs_qmesh_gulp(Eigfile,eigvecs,phonon_scell)
 
 
 

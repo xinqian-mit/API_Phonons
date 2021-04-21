@@ -11,20 +11,22 @@ import phonopy.interface.vasp as Intf_vasp
 from phonopy.structure.atoms import PhonopyAtoms
 import phonopy.file_IO as PhonIO
 from phonopy.interface.calculator import get_default_physical_units
-import API_quippy_phonopy_VASP as api_qpv # remember to set this module to python path
+import API_quippy as api_q
+import API_phonopy as api_ph
+ # remember to set this module to python path
 import copy as cp
 #from phonopy.interface.alm import get_fc2
 
 import API_alamode as api_alm
-import API_quippy_thirdorder as shengfc3
+import API_thirdorder as shengfc3
 import thirdorder_core
 import thirdorder_common
 
 
 Temperatures= [1200]
 NSnaps = 50 # number of snapshots generated per sc loop.
-Niter = 8 # number of iterations
-nneigh = 3 # nearest neighbor cutoff for fc3.
+Niter = 3 # number of iterations
+nneigh = 2 # nearest neighbor cutoff for fc3.
 
 bands_prefix = 'Zr_bcc_'
 if_write_iter = False # whether write sc iteratoins
@@ -51,11 +53,11 @@ Scells_phonopy = phonon_scell.get_supercells_with_displacements() # This returns
 
 Scells_quippy=[]
 for scell in Scells_phonopy:
-    Scells_quippy.append(api_qpv.phonopyAtoms_to_aseAtoms(scell))
+    Scells_quippy.append(api_ph.phonopyAtoms_to_aseAtoms(scell))
 
 
 
-force_quip_scells = api_qpv.calc_force_sets_GAP(gp_xml_file,Scells_quippy)
+force_quip_scells = api_q.calc_force_sets_GAP(gp_xml_file,Scells_quippy)
 
 #parse force set and calc force constants
 phonon_scell.set_forces(force_quip_scells)
@@ -78,7 +80,7 @@ if NAC == True:
     
 phonon_scell._set_dynamical_matrix()
 DynMat0 = phonon_scell._dynamical_matrix.get_dynamical_matrix()
-bands_sc=api_qpv.qpoints_Band_paths([[0.0,0.0,0.0]],1) #supercell
+bands_sc=api_ph.qpoints_Band_paths([[0.0,0.0,0.0]],1) #supercell
 phonon_scell.set_band_structure(bands_sc, is_eigenvectors=True)
 phonon_scell.set_mesh([1,1,1], is_eigenvectors=True)
 
@@ -102,7 +104,7 @@ for Temperature in Temperatures:
     FC3Sum = np.zeros([Natoms,Natoms,Natoms,3,3,3])
     FC3ave = np.zeros([Natoms,Natoms,Natoms,3,3,3])
     for icalc in range(Niter):
-        u_disps = api_qpv.thermo_disp_along_eig(phonon_scell,Temperature,NSnaps)
+        u_disps = api_ph.thermo_disp_along_eig(phonon_scell,Temperature,NSnaps)
         Scell_snaps = [];
         
         
@@ -112,9 +114,9 @@ for Temperature in Temperatures:
             pos = pos0 + u_disps[isnap]
             Scell_tmp.set_positions(pos)
             Scell_snaps.append(Scell_tmp)
-            snaps_ase.append(api_qpv.phonopyAtoms_to_aseAtoms(Scell_tmp))
+            snaps_ase.append(api_ph.phonopyAtoms_to_aseAtoms(Scell_tmp))
         
-        displacements,forces=api_qpv.get_DFSETS_GAP(Supercell,Scell_snaps,gp_xml_file) # in API_phonopy_lammps, there's a corresponding get_DFSETS_lmp for empirical potential.
+        displacements,forces=api_q.get_DFSETS_GAP(Supercell,Scell_snaps,gp_xml_file) # in API_phonopy_lammps, there's a corresponding get_DFSETS_lmp for empirical potential.
         #FC2=get_fc2(Supercell,phonon.get_primitive(),displacements,forces,log_level=1)
         FC2,FC3 = api_alm.get_fc2_fc3(phonon,displacements,forces,is_compact_fc=False,options=options,log_level=1)
         FC2Sum = FC2Sum + FC2
@@ -122,7 +124,7 @@ for Temperature in Temperatures:
         FC3Sum = FC3Sum + FC3
         FC3ave = FC3Sum/(icalc+1)
         phonon_scell.set_force_constants(FC2ave) # average.
-        bands_sc=api_qpv.qpoints_Band_paths([[0.0,0.0,0.0]],1) #supercell
+        bands_sc=api_ph.qpoints_Band_paths([[0.0,0.0,0.0]],1) #supercell
         phonon_scell.set_band_structure(bands_sc, is_eigenvectors=True)
         phonon_scell.set_mesh([1,1,1], is_eigenvectors=True)
         
@@ -149,19 +151,19 @@ for Temperature in Temperatures:
             phonon_scell._set_dynamical_matrix()
         
         if if_write_iter:
-            bands=api_qpv.qpoints_Band_paths(Qpoints,Band_points)
+            bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
             phonon.set_band_structure(bands,labels=band_labels)
             bs_plt=phonon.plot_band_structure()
             phonon.write_yaml_band_structure(filename='Disp_'+str(Temperature)+'K_iter'+str(icalc+1)+'.yaml')
 
     
     PhonIO.write_FORCE_CONSTANTS(phonon.get_force_constants(), filename='FORCE_CONSTANTS_'+str(Temperature)+'K')
-    bands=api_qpv.qpoints_Band_paths(Qpoints,Band_points)
+    bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
     phonon.set_band_structure(bands,labels=band_labels)
     bs_plt=phonon.plot_band_structure()
     phonon.write_yaml_band_structure(filename=bands_prefix+str(Temperature)+'K.yaml')
     
-    prim = api_qpv.phonopyAtoms_to_aseAtoms(phonon.get_primitive())
+    prim = api_ph.phonopyAtoms_to_aseAtoms(phonon.get_primitive())
     api_alm.write_shengBTE_fc3('FORCE_CONSTANTS_3RD_'+str(Temperature)+'K',FC3ave,phonon,prim)
 
 

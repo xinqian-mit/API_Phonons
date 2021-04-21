@@ -2,14 +2,14 @@
 # coding: utf-8
 
 import numpy as np
-import API_quippy_thirdorder as FC3
+import API_thirdorder as FC3
 import thirdorder_core
 import thirdorder_common
 from phonopy import Phonopy
 import phonopy.interface.vasp as Intf_vasp
 from phonopy.structure.atoms import PhonopyAtoms
 import phonopy.file_IO as PhonIO
-import API_quippy_phonopy_VASP as api_qpv # remember to set this module to python path
+import API_phonopy as api_ph # remember to set this module to python path
 import os, glob
 import os.path
 import shutil
@@ -55,7 +55,7 @@ for i, e in enumerate(list4):
         Scells.append(Scell)
         os.remove(filename)
         #print number
-        Scell_ase = api_qpv.phonopyAtoms_to_aseAtoms(Scell)
+        Scell_ase = api_ph.phonopyAtoms_to_aseAtoms(Scell)
         force = np.array(api_pl.calc_lmp_force(cmds,Scell_ase))
         phipart[:, i, :] -= isign * jsign * force[p, :].T   
      
