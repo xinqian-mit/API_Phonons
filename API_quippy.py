@@ -25,23 +25,6 @@ from numba import njit
 
 
 
-#def phonopyAtoms_to_quipAtoms(PhonScells_w_disps): newer verions of quippy uses ase atoms.
-#    Scells_quippy=[];
-#    for scells in PhonScells_w_disps:
-#        quip_atoms=Atoms(cell=scells.get_cell(),positions=scells.get_positions())
-#        quip_atoms.set_atomic_numbers(scells.get_atomic_numbers())
-#       quip_atoms.set_masses(scells.get_masses())
-#        Scells_quippy.append(quip_atoms)
-#    return Scells_quippy
-
-#def phonopyAtom_to_quipAtom(scell):    
-#    quip_atom=Atoms(cell=scell.get_cell(),positions=scell.get_positions())
-#    quip_atom.set_atomic_numbers(scell.get_atomic_numbers())
-#    quip_atom.set_masses(scell.get_masses())
-#    return quip_atom
-
-
-
 
 ## -------------------------------------- Calculate Energy and Forces ----------------------------------------------#
 
@@ -194,61 +177,8 @@ def get_DFSETS_GAP(Scell0,Scell_snaps,gp_xml_file):
 
 
   
-        
-        
-def write_xyz_aseAtomsList(AtomsList,filename):
-    for at in AtomsList:
-        ase.io.write(filename,at,format='xyz')
 
         
 
 
-## -------------------------------------- Other Properties Calculation ----------------------------------------------# 
-    
-#def get_born_Charges(pot,at0, charge, dipole, dx=1e-5, args_str=None):  
-#    at0.add_property('charge',charge)
-#    at0.add_property('dipole',dipole)
-#    fborn_tensor = fzeros((3,3,at0.n))
-#    restart = True
-#    for i in frange(at0.n):
-#        for j in frange(3):
-#            at = at0.copy()
-#            at.pos[j,i] += -dx
-#            pot.calc(at, force=True, restart=restart, args_str=args_str) # This helps to set the cutoff of atoms
-#            at.calc_connect()
-#            pot.calc(at, force=True, restart=restart, args_str=args_str)
-#            dip1 = fzeros(3)
-#            for k in frange(at.n):
-#                dip1 += at.dipole[k] + at.charge[k]*at.pos[:,k]
-#            at = at0.copy()
-#            at.pos[j,i] += dx
-#            pot.calc(at, force=True, restart=restart, args_str=args_str)
-#            at.calc_connect()
-        
-        
-#            dip2 = fzeros(3)
-#            for k in frange(at.n):
-#                dip2 += at.dipole[k] + at.charge[k]*at.pos[:,k]
-        
-#            fborn_tensor[:,j,i] = (dip2 - dip1)/(dx*2.0)
-#    Z_born = np.zeros((at0.n,3,3))
-#    for iat in range(at0.n):
-#        for i in range(3):
-#            for j in range(3):
-#                Z_born[iat,i,j]=fborn_tensor[j+1,i+1,iat+1]
-#    return Z_born
-        
 
-    
-    
-    
-                                
-                    
-
-    
-
-                    
-
-    
-    
-    
