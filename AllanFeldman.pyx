@@ -145,9 +145,9 @@ cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double factor = VaspToTHz)
         ws = freqs[s]*2*np.pi
         eig_s = eigvecs.T[s]
         perc = np.round(s/Ns)*10
-        print(s)
-        #if perc%10 < 0.001 and perc>0:
-        #    print(str(perc)+'% completed')
+        #print(s)
+        if perc%10 < 0.001 and perc>0:
+            print(str(perc)+'% completed')
         
        
         for r in range(s+1,Ns):
