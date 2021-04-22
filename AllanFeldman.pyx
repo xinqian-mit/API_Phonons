@@ -76,8 +76,8 @@ cpdef get_Vmat_modePair_q(double complex[:,:,:] ddm_q,double complex[:] eig_s,do
      
 
 
-cpdef Lorentizan(double x,double width):
-    return 1/np.pi*width/2/(x*x + width*width/4)
+cpdef delta_lorentzian(double x,double width):
+    return (width*width/4)/(x*x + width*width/4)
     
     
 cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double factor = VaspToTHz):
@@ -104,7 +104,7 @@ cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double factor = VaspToTHz)
     cdef int perc
     cdef double ws
     cdef double wr
-    cdef double lorentz
+    cdef double delta
 
     
     qq = np.array(q)   
@@ -145,15 +145,16 @@ cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double factor = VaspToTHz)
         ws = freqs[s]*2*np.pi
         eig_s = eigvecs.T[s]
         perc = np.round(s/Ns)*10
-        if perc%10 < 0.001 and perc>0:
-            print(str(perc)+'% completed')
+        print(s)
+        #if perc%10 < 0.001 and perc>0:
+        #    print(str(perc)+'% completed')
         
        
         for r in range(s+1,Ns):
             wr = freqs[r]*2*np.pi
             eig_r = eigvecs.T[r]
             V_sr = get_Vmat_modePair_q(ddm_q,eig_s,eig_r,ws,wr,factor)
-            V_sr = symmetrize_gv(phonon,qq,V_sr) # symmetrize
+            #V_sr = symmetrize_gv(phonon,qq,V_sr) # symmetrize
             V_rs = -np.conj(V_sr) # antihermitians
             Vmat[s,r,:] = V_sr
             Vmat[r,s,:] = V_rs
@@ -164,11 +165,11 @@ cpdef AF_diffusivity_q(phonon,q,double LineWidth=1e-4,double factor = VaspToTHz)
                 SV_sr[i] = V_sr[i]*(ws+wr)/2.
                 SV_rs[i] = V_rs[i]*(ws+wr)/2.
              
-            lorentz = Lorentizan(ws-wr,LineWidth)
+            delta = delta_lorentzian(ws-wr,LineWidth)
             #print(lorentz)
             
-            Diffusivity[s] += np.dot(np.conj(SV_sr),SV_sr).real*lorentz
-            Diffusivity[r] += np.dot(np.conj(SV_rs),SV_rs).real*lorentz
+            Diffusivity[s] += np.dot(np.conj(SV_sr),SV_sr).real*delta
+            Diffusivity[r] += np.dot(np.conj(SV_rs),SV_rs).real*delta
                 
         
         
