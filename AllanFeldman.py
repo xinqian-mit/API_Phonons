@@ -71,7 +71,7 @@ def get_Vmat_modePair_q(ddm_q,eig_s,eig_r, ws, wr, factor):# Dornadio's v operat
 
 @njit
 def delta_lorentz( x, width):
-    return (width*width/4)/(x*x + width*width/4)
+    return (width/2)/(x*x + width*width/4)/np.pi
     
     
     
@@ -120,7 +120,7 @@ def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz):
                             
             Diff_s += np.dot(np.conj(SV_sr),SV_sr).real*delta
        
-        Diffusivity[s] = Diff_s*np.pi/3/(ws**2)*(A2m**2)*factor
+        Diffusivity[s] = Diff_s*np.pi/3/(ws**2)*(A2m**2*THz2Hz)
     
     
     return Diffusivity,Vmat   
