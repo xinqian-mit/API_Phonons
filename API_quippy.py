@@ -6,19 +6,10 @@ from phonopy.structure.atoms import PhonopyAtoms
 import phonopy.interface.vasp as phonVasp
 import phonopy.units as Units
 from math import pi
-import os, glob
-import os.path
-import shutil
-import ase.io as io
-
-
-#from quippy.farray import fzeros, frange, fidentity
-#from quippy.units import BOHR, HARTREE, PI
 import ase
 import multiprocessing as mp
 #from joblib import Parallel, delayed
 import copy as cp
-from numba import njit 
 
 
 
