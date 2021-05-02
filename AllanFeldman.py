@@ -32,6 +32,56 @@ def get_dq_dynmat_q(phonon,q):
     groupvel = phonon._group_velocity
     return groupvel._get_dD(q)
 
+def get_dq_dynmat_Gamma(phonon):
+    fc=phonon.get_force_constants()
+    Nat,Nat1,Dim,Dim1 = np.shape(fc)
+    scell = phonon.get_supercell()
+    Cell_vec = phonon.get_supercell().get_cell()
+    mass = scell.get_masses()
+    R = phonon.get_supercell().get_positions()
+    _p2s_map = phonon._dynamical_matrix._p2s_map 
+    _s2p_map = phonon._dynamical_matrix._s2p_map
+    multiplicity = phonon._dynamical_matrix._multiplicity
+    vecs = phonon._dynamical_matrix._smallest_vectors
+    
+    
+    dxDymat = np.zeros((Nat*3,Nat*3))
+    dyDymat = np.zeros((Nat*3,Nat*3))
+    dzDymat = np.zeros((Nat*3,Nat*3))
+    
+    for i,s_i in enumerate(_p2s_map):
+        for j,s_j in enumerate(_p2s_map):
+            sqrt_mm = np.sqrt(mass[i] * mass[j])
+            dx_local = np.zeros((3,3))
+            dy_local = np.zeros((3,3))
+            dz_local = np.zeros((3,3))
+            for k in range(Nat):
+                if s_j == _s2p_map[k]:
+                    multi = multiplicity[k][i]
+                    
+                    for l in range(multi):
+                        vec = vecs[k][i][l] # dimensionless
+                        ri_rj = np.matmul(vec,Cell_vec) # with units.
+                        
+                        dx_local += fc[s_i, k] * ri_rj[0]/ sqrt_mm 
+                        dy_local += fc[s_i, k] * ri_rj[1]/ sqrt_mm 
+                        dz_local += fc[s_i, k] * ri_rj[2]/ sqrt_mm
+                        
+            dxDymat[(i*3):(i*3+3), (j*3):(j*3+3)] += dx_local
+            dyDymat[(i*3):(i*3+3), (j*3):(j*3+3)] += dy_local
+            dzDymat[(i*3):(i*3+3), (j*3):(j*3+3)] += dz_local
+                        
+                    
+    ddm_dq = np.array([dxDymat,dyDymat,dzDymat])+0j             
+    
+    return ddm_dq
+            
+                                              
+    
+    
+    
+
+
 def symmetrize_gv(phonon,q,gv):
     symm = phonon.get_symmetry() # is an symmetry object
     
@@ -73,6 +123,12 @@ def get_Vmat_modePair_q(ddm_q,eig_s,eig_r, ws, wr, factor):# Dornadio's v operat
 def delta_lorentz( x, width):
     return (width/2)/(x*x + width*width/4)/np.pi
     
+@njit
+def delta_square(x,width):
+    if np.abs(x)<width:
+        return 1.0
+    else:
+        return 0.0
     
     
 @njit(parallel=True)
@@ -103,6 +159,7 @@ def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz):
             V_sr = get_Vmat_modePair_q(ddm_q,eig_s,eig_r,ws,wr,factor)
             #V_sr = symmetrize_gv(phonon,q,V_sr) # symmetrize
             V_rs = -np.conj(V_sr) # antihermitians
+            #print(V_sr)
             Vmat[s,r,:] = V_sr
             Vmat[r,s,:] = V_rs
                         
@@ -141,13 +198,18 @@ def AF_diffusivity_q(phonon,q,LineWidth=1e-4,factor = VaspToTHz):
     
 
     
-    
-    ddms = get_dq_dynmat_q(phonon,q)    
+        
     if np.linalg.norm(q) < 1e-5:
-        q_shifted = np.array([1e-5,1e-5,1e-5])
-        ddms = get_dq_dynmat_q(phonon,q_shifted)
+        ddm_q = get_dq_dynmat_Gamma(phonon)
+    else:
+        ddms = get_dq_dynmat_q(phonon,q)
+        ddm_q = ddms[1:,:,:]
     
-    ddm_q = ddms[1:,:,:]
+    
+    
+    
+    
+    #print(ddm_q)
         # central derivative, need to shift by small amount to obtain the correct derivative. 
         # Otherwise will dD/dq be zero due to the fact D(q)=D(-q). 
     
@@ -155,7 +217,7 @@ def AF_diffusivity_q(phonon,q,LineWidth=1e-4,factor = VaspToTHz):
     
     Diffusivity,Vmat = calc_Diff(freqs,eigvecs,ddm_q,LineWidth,factor) 
    
-    
+    #print(Vmat)
     
 
         

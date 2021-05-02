@@ -3,6 +3,7 @@ from phonopy import Phonopy
 from phonopy.structure.atoms import PhonopyAtoms
 import phonopy.interface.vasp as phonVasp
 import phonopy.units as Units
+from phonopy.units import Kb, THzToEv
 from math import pi
 import os, glob
 import os.path
@@ -175,18 +176,27 @@ def write_xyz_aseAtomsList(AtomsList,filename):
     for at in AtomsList:
         ase.io.write(filename,at,format='xyz')
 
-@njit         
+        
 def Bose_factor(T,freq_THz):
     if T==0.0:
         return 0.0    
-    if freq_THz <= 0:
-        freq_THz = np.amax(np.array([1.0e-6,np.abs(freq_THz)])) # the absolute value is to consider imaginary (negative) modes.
-    exp_factor=np.exp(Units.Hbar*freq_THz*2.0*pi*1.0e12/(Units.Kb*T))
+    if freq_THz.any() <= 0:
+        freq_THz[freq_THz<=0] = np.amax(np.array([1.0e-6,np.abs(freq_THz)])) # the absolute value is to consider imaginary (negative) modes.
+    exp_factor=np.exp(Units.Hbar*freq_THz*2.0*np.pi*1.0e12/(Units.Kb*T))
     n=1./(exp_factor-1.0)
 
-    if exp_factor == np.inf:
-        n = 0.0
+    if exp_factor.any() == np.inf:
+        n [freq_THz== np.inf]
     return n
+
+def mode_cv(temp, freqsTHz):  # freqs (eV)
+    freqs = np.abs(freqsTHz)*THzToEv
+    x = freqs / Kb / temp
+    expVal = np.exp(x)
+    cv_eVK = Kb * x ** 2 * expVal / (expVal - 1.0) ** 2
+    cv_eVK[freqs<1e-5] = 0
+    eVtoJ = 1.60218e-19
+    return  eVtoJ*cv_eVK# in J/K
     
 @njit 
 def calc_Amp_displacement(T,freq_THz,mass):

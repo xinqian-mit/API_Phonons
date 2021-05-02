@@ -17,6 +17,7 @@ import copy as cp
 import API_phonopy as api_ph
 from matscipy.neighbours import neighbour_list
 from numba import njit 
+
 ## ------------------------------------- Get Lammps box parameters -----------------------------------------------------##
 
 
