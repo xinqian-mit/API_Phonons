@@ -176,17 +176,15 @@ def write_xyz_aseAtomsList(AtomsList,filename):
     for at in AtomsList:
         ase.io.write(filename,at,format='xyz')
 
-        
+@njit        
 def Bose_factor(T,freq_THz):
     if T==0.0:
-        return 0.0    
-    if freq_THz.any() <= 0:
-        freq_THz[freq_THz<=0] = np.amax(np.array([1.0e-6,np.abs(freq_THz)])) # the absolute value is to consider imaginary (negative) modes.
+        return 0.0
+    if freq_THz <0:
+        freq_THz = np.amax(np.array([1.0e-6,np.abs(freq_THz)])) # the absolute value is to consider imaginary (negative) modes.
+    
     exp_factor=np.exp(Units.Hbar*freq_THz*2.0*np.pi*1.0e12/(Units.Kb*T))
     n=1./(exp_factor-1.0)
-
-    if exp_factor.any() == np.inf:
-        n [freq_THz== np.inf]
     return n
 
 def mode_cv(temp, freqsTHz):  # freqs (eV)
