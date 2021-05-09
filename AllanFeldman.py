@@ -1,7 +1,8 @@
 import numpy as np
-from phonopy.units import VaspToTHz
+from phonopy.units import VaspToTHz,AMU,EV
 from phonopy.harmonic.force_constants import similarity_transformation
 from numba import jit,njit,prange
+
 
 def get_dq_dynmat_q(phonon,q):
     """
@@ -31,6 +32,7 @@ def get_dq_dynmat_q(phonon,q):
     """
     groupvel = phonon._group_velocity
     return groupvel._get_dD(q)
+
 
 def get_dq_dynmat_Gamma(phonon):
     fc=phonon.get_force_constants()
@@ -62,8 +64,8 @@ def get_dq_dynmat_Gamma(phonon):
                     for l in range(multi):
                         vec = vecs[k][i][l] # dimensionless
                         ri_rj = np.matmul(vec,Cell_vec) # with units.
-                        
-                        dx_local += fc[s_i, k] * ri_rj[0]/ sqrt_mm 
+                        # Dym matrix eV/A2/AMU, [Freq]^2 
+                        dx_local += fc[s_i, k] * ri_rj[0]/ sqrt_mm # eV/A/AMU
                         dy_local += fc[s_i, k] * ri_rj[1]/ sqrt_mm 
                         dz_local += fc[s_i, k] * ri_rj[2]/ sqrt_mm
                         
@@ -77,11 +79,6 @@ def get_dq_dynmat_Gamma(phonon):
     return ddm_dq
             
                                               
-    
-    
-    
-
-
 def symmetrize_gv(phonon,q,gv):
     symm = phonon.get_symmetry() # is an symmetry object
     
@@ -104,6 +101,7 @@ def symmetrize_gv(phonon,q,gv):
         
     return gv_sym / len(rotations)
 
+
 @njit
 def get_Vmat_modePair_q(ddm_q,eig_s,eig_r, ws, wr, factor):# Dornadio's v operators. 
     
@@ -113,15 +111,24 @@ def get_Vmat_modePair_q(ddm_q,eig_s,eig_r, ws, wr, factor):# Dornadio's v operat
     
     for i in range(3):
         ddm_q_i = ddm_q[i]
-        V_sr[i]=np.dot(eig_s_conj,np.dot(ddm_q_i,eig_r))*(factor**2)/2*1j/np.sqrt(np.abs(ws*wr))
+        V_sr[i]=np.dot(eig_s_conj,np.dot(ddm_q_i,eig_r))/2/np.sqrt(np.abs(ws*wr))
+        
+        #  eV/A/AMU = eV/A2/AMU * A = 2pi*factor*A
        
+    V_sr = V_sr*factor**2*2*np.pi # ATHz
     
     return V_sr
      
 
 @njit
 def delta_lorentz( x, width):
-    return (width/2)/(x*x + width*width/4)/np.pi
+    return (width)/(x*x + width*width)
+
+
+@njit 
+def double_lorentz(w1,w2,width1,width2):
+    return (width1+width2)/((w1-w2)*(w1-w2)+(width1+width2)**2)
+
     
 @njit
 def delta_square(x,width):
@@ -135,8 +142,7 @@ def delta_square(x,width):
 def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz):
     A2m = 1e-10
     THz2Hz = 1e12
-    Diff_s = 0.0
-
+    
 
     Ns = len(freqs)
     Diffusivity = np.zeros(Ns)
@@ -145,8 +151,7 @@ def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz):
     #SV_rs = np.zeros(3,dtype=np.complex128)
     V_sr = np.zeros(3,dtype=np.complex128)
     V_rs = np.zeros(3,dtype=np.complex128)
-    Vmat = np.zeros((Ns,Ns,3),dtype=np.complex128)
-    
+    Vmat = np.zeros((Ns,Ns,3),dtype=np.complex128)    
     
     # compute Vmat
     for s in prange(Ns):
@@ -158,10 +163,9 @@ def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz):
             eig_r = eigvecs.T[r]
             V_sr = get_Vmat_modePair_q(ddm_q,eig_s,eig_r,ws,wr,factor)
             #V_sr = symmetrize_gv(phonon,q,V_sr) # symmetrize
-            V_rs = -np.conj(V_sr) # antihermitians
-            #print(V_sr)
+            V_rs = get_Vmat_modePair_q(ddm_q,eig_r,eig_s,ws,wr,factor) # anti-hermitians
             Vmat[s,r,:] = V_sr
-            Vmat[r,s,:] = V_rs
+            Vmat[r,s,:] = np.conj(V_sr)
                         
 
     for s in prange(Ns):
@@ -170,14 +174,12 @@ def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz):
         for r in range(Ns):
             
             wr = freqs[r]*2*np.pi
-            delta = delta_lorentz(ws-wr,LineWidth)
-            SV_sr = np.zeros(3,dtype=np.complex128)    
-            for i in range(3):            
-                SV_sr[i] = Vmat[s,r,i]*(ws+wr)/2.
-                            
-            Diff_s += np.dot(np.conj(SV_sr),SV_sr).real*delta
+            tau_sr = delta_lorentz(ws-wr,LineWidth) # THz^-1
+            #SV_sr = np.zeros(3,dtype=np.complex128)    
+                                       
+            Diff_s += np.dot(Vmat[s,r,:],Vmat[r,s,:]).real*tau_sr #A^2THz^2*THz-1 = A^2THz
        
-        Diffusivity[s] = Diff_s*np.pi/3/(ws**2)*(A2m**2*THz2Hz)
+        Diffusivity[s] = Diff_s*(A2m**2*THz2Hz) #A^2THz^4/THz^2*THz-1 = A^2THz
     
     
     return Diffusivity,Vmat   
@@ -187,38 +189,23 @@ def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz):
     
 def AF_diffusivity_q(phonon,q,LineWidth=1e-4,factor = VaspToTHz):
 
-    
-    
     dm =  phonon.get_dynamical_matrix_at_q(q)
     eigvals, eigvecs = np.linalg.eigh(dm)
     eigvals = eigvals.real
     freqs = np.sqrt(np.abs(eigvals)) * np.sign(eigvals) * factor  
     
-    
-    
-
-    
         
-    if np.linalg.norm(q) < 1e-5:
+    if np.linalg.norm(q) < 1e-6:
         ddm_q = get_dq_dynmat_Gamma(phonon)
     else:
         ddms = get_dq_dynmat_q(phonon,q)
         ddm_q = ddms[1:,:,:]
     
-    
-    
-    
-    
     #print(ddm_q)
         # central derivative, need to shift by small amount to obtain the correct derivative. 
         # Otherwise will dD/dq be zero due to the fact D(q)=D(-q). 
-    
-    #print(ddm_q.shape)   
+      
     
     Diffusivity,Vmat = calc_Diff(freqs,eigvecs,ddm_q,LineWidth,factor) 
-   
-    #print(Vmat)
-    
-
-        
+      
     return Diffusivity,Vmat     
