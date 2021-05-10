@@ -104,6 +104,16 @@ The file RandDisps_SelfConsist_FC2_FC3.py and RandDisps_SelfConsit_FC2_GAP_ALM.p
 and thirdorder force constants. I first use the finite displacement method, and obtain the first generation of eigenvectors. Then I used 
 the new set of FC2 and FC3, and a new set of eigenvectors. This process is iterated. Convergence can usually be achieved after ~ 5 iterations.
 <br />
+
+#### Generate_nacl_subnmGap:<br />
+A simple example of how to generate an inteface or gap using ase package <br />
+
+#### RDF:<br />
+A simple example of how to compute radial distribution function g(r) <br />
+
+#### SW_aSi_AFModel:<br />
+An example of computing modal diffusivity using Allan-Feldman's throy, under testing,currently still relatively slow. The code is partially accelerated using paralllelized numba.  <br />
+
 #### EIM_LattDyn_NaCl:<br />
 This gives example how we can interface lammps and phonopy to perform lattice dynamics based on the EIM potential supported
 by lammps. Thirdorder.py and Fourthorder.py are implemented with lammps code for computing FC3 and FC4.
