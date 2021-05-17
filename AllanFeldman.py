@@ -36,7 +36,7 @@ def get_dq_dynmat_q(phonon,q):
 
 def get_dq_dynmat_Gamma(phonon):
     fc=phonon.get_force_constants()
-    Nat,Nat1,Dim,Dim1 = np.shape(fc)
+    Nat= phonon._dynamical_matrix._scell.get_number_of_atoms()
     scell = phonon.get_supercell()
     Cell_vec = phonon.get_supercell().get_cell()
     mass = scell.get_masses()
@@ -139,13 +139,13 @@ def delta_square(x,width):
     
     
 @njit(parallel=True)
-def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz):
+def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz,if_tensor=False):
     A2m = 1e-10
     THz2Hz = 1e12
     
 
     Ns = len(freqs)
-    Diffusivity = np.zeros(Ns)
+    
     
     
     #SV_rs = np.zeros(3,dtype=np.complex128)
@@ -167,19 +167,36 @@ def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz):
             Vmat[s,r,:] = V_sr
             Vmat[r,s,:] = np.conj(V_sr)
                         
-
-    for s in prange(Ns):
-        Diff_s = 0.0
-        ws = freqs[s]*2*np.pi
-        for r in range(Ns):
+    if if_tensor:
+        Diffusivity = np.zeros((Ns,3,3))
+        
+        for s in prange(Ns):
+            Diff_s = np.zeros((3,3))
+            ws = freqs[s]*2*np.pi
+            for r in range(Ns):            
+                wr = freqs[r]*2*np.pi
+                tau_sr = delta_lorentz(ws-wr,LineWidth) # THz^-1
+                #SV_sr = np.zeros(3,dtype=np.complex128)
+                for i in range(3):
+                    for j in range(3):
+                        Diff_s[i,j] += Vmat[s,r,i],Vmat[r,s,j]*tau_sr*np.pi
+                      
+            Diffusivity[s] = Diff_s*(A2m**2*THz2Hz) #A^2THz^4/THz^2*THz-1 = A^2THz        
+        
+        
+    else:
+        Diffusivity = np.zeros(Ns)
             
-            wr = freqs[r]*2*np.pi
-            tau_sr = delta_lorentz(ws-wr,LineWidth) # THz^-1
-            #SV_sr = np.zeros(3,dtype=np.complex128)    
-                                       
-            Diff_s += np.dot(Vmat[s,r,:],Vmat[r,s,:]).real*tau_sr #A^2THz^2*THz-1 = A^2THz
-       
-        Diffusivity[s] = Diff_s*(A2m**2*THz2Hz) #A^2THz^4/THz^2*THz-1 = A^2THz
+    
+        for s in prange(Ns):
+            Diff_s = 0.0
+            ws = freqs[s]*2*np.pi
+            for r in range(Ns):            
+                wr = freqs[r]*2*np.pi
+                tau_sr = delta_lorentz(ws-wr,LineWidth) # THz^-1
+                #SV_sr = np.zeros(3,dtype=np.complex128)                                           
+                Diff_s += np.dot(Vmat[s,r,:],Vmat[r,s,:]).real*tau_sr*np.pi/3 #A^2THz^2*THz-1 = A^2THz       
+            Diffusivity[s] = Diff_s*(A2m**2*THz2Hz) #A^2THz^4/THz^2*THz-1 = A^2THz
     
     
     return Diffusivity,Vmat   
