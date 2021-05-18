@@ -139,7 +139,7 @@ def delta_square(x,width):
     
     
 @njit(parallel=True)
-def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz,if_tensor=False):
+def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz):
     A2m = 1e-10
     THz2Hz = 1e12
     
@@ -166,45 +166,74 @@ def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz,if_tensor=Fals
             V_rs = get_Vmat_modePair_q(ddm_q,eig_r,eig_s,ws,wr,factor) # anti-hermitians
             Vmat[s,r,:] = V_sr
             Vmat[r,s,:] = np.conj(V_sr)
-                        
-    if if_tensor:
-        Diffusivity = np.zeros((Ns,3,3))
-        
-        for s in prange(Ns):
-            Diff_s = np.zeros((3,3))
-            ws = freqs[s]*2*np.pi
-            for r in range(Ns):            
-                wr = freqs[r]*2*np.pi
-                tau_sr = delta_lorentz(ws-wr,LineWidth) # THz^-1
-                #SV_sr = np.zeros(3,dtype=np.complex128)
-                for i in range(3):
-                    for j in range(3):
-                        Diff_s[i,j] += Vmat[s,r,i],Vmat[r,s,j]*tau_sr*np.pi
-                      
-            Diffusivity[s] = Diff_s*(A2m**2*THz2Hz) #A^2THz^4/THz^2*THz-1 = A^2THz        
-        
-        
-    else:
-        Diffusivity = np.zeros(Ns)
+
+    Diffusivity = np.zeros(Ns)
             
     
-        for s in prange(Ns):
-            Diff_s = 0.0
-            ws = freqs[s]*2*np.pi
-            for r in range(Ns):            
-                wr = freqs[r]*2*np.pi
-                tau_sr = delta_lorentz(ws-wr,LineWidth) # THz^-1
-                #SV_sr = np.zeros(3,dtype=np.complex128)                                           
-                Diff_s += np.dot(Vmat[s,r,:],Vmat[r,s,:]).real*tau_sr*np.pi/3 #A^2THz^2*THz-1 = A^2THz       
-            Diffusivity[s] = Diff_s*(A2m**2*THz2Hz) #A^2THz^4/THz^2*THz-1 = A^2THz
+    for s in prange(Ns):
+        Diff_s = 0.0
+        ws = freqs[s]*2*np.pi
+        for r in range(Ns):            
+            wr = freqs[r]*2*np.pi
+            tau_sr = delta_lorentz(ws-wr,LineWidth) # THz^-1
+            #SV_sr = np.zeros(3,dtype=np.complex128)                                           
+            Diff_s += np.dot(Vmat[s,r,:],Vmat[r,s,:]).real*tau_sr*np.pi/3 #A^2THz^2*THz-1 = A^2THz       
+        Diffusivity[s] = Diff_s*(A2m**2*THz2Hz) #A^2THz^4/THz^2*THz-1 = A^2THz
     
     
     return Diffusivity,Vmat   
     
+
+
+@njit(parallel=True)
+def calc_Diff_tensor(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz):
+    A2m = 1e-10
+    THz2Hz = 1e12
+    
+
+    Ns = len(freqs)
     
     
     
-def AF_diffusivity_q(phonon,q,LineWidth=1e-4,factor = VaspToTHz):
+    #SV_rs = np.zeros(3,dtype=np.complex128)
+    V_sr = np.zeros(3,dtype=np.complex128)
+    V_rs = np.zeros(3,dtype=np.complex128)
+    Vmat = np.zeros((Ns,Ns,3),dtype=np.complex128)    
+    
+    # compute Vmat
+    for s in prange(Ns):
+ 
+        for r in range(s+1,Ns):
+            ws = freqs[s]*2*np.pi
+            eig_s = eigvecs.T[s]
+            wr = freqs[r]*2*np.pi
+            eig_r = eigvecs.T[r]
+            V_sr = get_Vmat_modePair_q(ddm_q,eig_s,eig_r,ws,wr,factor)
+            #V_sr = symmetrize_gv(phonon,q,V_sr) # symmetrize
+            V_rs = get_Vmat_modePair_q(ddm_q,eig_r,eig_s,ws,wr,factor) # anti-hermitians
+            Vmat[s,r,:] = V_sr
+            Vmat[r,s,:] = np.conj(V_sr)
+
+    Diffusivity = np.zeros((Ns,3,3))
+            
+    
+    for s in prange(Ns):
+        Diff_s = np.zeros((3,3))
+        ws = freqs[s]*2*np.pi
+        for r in range(Ns):            
+            wr = freqs[r]*2*np.pi
+            tau_sr = delta_lorentz(ws-wr,LineWidth) # THz^-1
+            #SV_sr = np.zeros(3,dtype=np.complex128)                                           
+            for i in range(3):
+                for j in range(3):
+                    Diff_s[i,j]+= np.real(Vmat[s,r,i]*Vmat[r,s,j])*tau_sr*np.pi*(A2m**2*THz2Hz)
+        Diffusivity[s] = Diff_s #A^2THz^4/THz^2*THz-1 = A^2THz
+    
+    
+    return Diffusivity,Vmat 
+
+    
+def AF_diffusivity_q(phonon,q,LineWidth=1e-4,factor = VaspToTHz,if_tensor=False):
 
     dm =  phonon.get_dynamical_matrix_at_q(q)
     eigvals, eigvecs = np.linalg.eigh(dm)
@@ -222,7 +251,12 @@ def AF_diffusivity_q(phonon,q,LineWidth=1e-4,factor = VaspToTHz):
         # central derivative, need to shift by small amount to obtain the correct derivative. 
         # Otherwise will dD/dq be zero due to the fact D(q)=D(-q). 
       
-    
-    Diffusivity,Vmat = calc_Diff(freqs,eigvecs,ddm_q,LineWidth,factor) 
+    if if_tensor:
+        Diffusivity,Vmat = calc_Diff_tensor(freqs,eigvecs,ddm_q,LineWidth,factor)    
+    else:        
+        Diffusivity,Vmat = calc_Diff(freqs,eigvecs,ddm_q,LineWidth,factor)
+        for n,diff_mode in enumerte(Diffusivity):
+            diff_n = symmetrize_gv(phonon,q,diff_mode) # symmetrize tensor
+            Diffusivity[n]=diff_n
       
     return Diffusivity,Vmat     
