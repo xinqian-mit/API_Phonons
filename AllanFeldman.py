@@ -164,7 +164,7 @@ def calc_Diff(freqs,eigvecs,ddm_q,LineWidth=1e-4,factor=VaspToTHz):
             eig_r = eigvecs.T[r]
             V_sr = get_Vmat_modePair_q(ddm_q,eig_s,eig_r,ws,wr,factor)
             #V_sr = symmetrize_gv(phonon,q,V_sr) # symmetrize
-            V_rs = get_Vmat_modePair_q(ddm_q,eig_r,eig_s,ws,wr,factor) # anti-hermitians
+            #V_rs = get_Vmat_modePair_q(ddm_q,eig_r,eig_s,ws,wr,factor) # anti-hermitians
             Vmat[s,r,:] = V_sr
             Vmat[r,s,:] = np.conj(V_sr)
 
