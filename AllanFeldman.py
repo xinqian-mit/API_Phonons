@@ -107,11 +107,12 @@ def get_Vmat_modePair_q(ddm_q,eig_s,eig_r, ws, wr, factor):# Dornadio's v operat
     
     Ns = len(eig_s) #Natoms*3, length of the eigenvector
     eig_s_conj = np.ascontiguousarray(np.conj(eig_s))
+    eig_r_ = np.ascontiguousarray(eig_r)
     V_sr = np.zeros(3,dtype=np.complex128)
     
     for i in range(3):
         ddm_q_i = np.ascontiguousarray(ddm_q[i])
-        V_sr[i]=np.dot(eig_s_conj,np.dot(ddm_q_i,eig_r))/2/np.sqrt(np.abs(ws*wr))
+        V_sr[i]=np.dot(eig_s_conj,np.dot(ddm_q_i,eig_r_))/2/np.sqrt(np.abs(ws*wr))
         
         #  eV/A/AMU = eV/A2/AMU * A = 2pi*factor*A
        
