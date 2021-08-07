@@ -43,7 +43,7 @@ for compilation, and add them to PYTHONPATH for import.
 
 #### quippy pakage
 It is recommended to compile using gcc and python 3.8 for the quippy packages.
-Seem intel compilers would generate segmentation fault for quippy, when call
+Certain versions of intel compilers would generate segmentation fault for quippy, when call
 quippy.potential.Potential objects' calculate function. 
 
 #### phonopy and plot bandstructures
