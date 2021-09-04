@@ -30,7 +30,7 @@ import os
 
 Qpoints=np.array([[0.,0.,0.]]) # Qpoints should always be a 2D array.
 Ncells=[4,4,4] # construct supercell.
-qmesh=[2,2,2] # Gamma point
+#qmesh=[2,2,2] # Gamma point
 Band_points=1
 NSnaps = 10
 Temperature = 300
@@ -82,7 +82,7 @@ if NAC == True:
 # set qpoints along BZ path
 bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
 phonon_scell.set_band_structure(bands, is_eigenvectors=True)
-phonon_scell.set_mesh(qmesh, is_eigenvectors=True)
+#phonon_scell.set_mesh(qmesh, is_eigenvectors=True)
 phonon_scell.write_yaml_band_structure()
 eigvecs=api_ph.get_reshaped_eigvecs(phonon_scell)
 
