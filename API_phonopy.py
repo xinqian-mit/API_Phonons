@@ -174,7 +174,7 @@ def write_unitcell_eigvecs_qmesh_gulp(filename,eigvecs,phonon_scell):
 
 def write_xyz_aseAtomsList(AtomsList,filename):
     for at in AtomsList:
-        ase.io.write(filename,at,format='xyz')
+        ase.io.write(filename,at,format='xyz',append=True)
 
 @njit        
 def Bose_factor(T,freq_THz):
