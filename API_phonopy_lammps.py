@@ -158,6 +158,16 @@ def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammp
 
 
 #---------------------------------------------File io-------------------------------------------------------------#
+def read_extxyz(filename,index=':'):
+    Snaps = io.read(filename, format='extxyz',index=index)
+    energies = []
+    for snap in Snaps:
+        energies.append(snap.get_calculator().results['energy'])
+        
+    energies = np.array(energies)
+    return Snaps, energies
+
+
 def write_ScellCar_MaterStudio(Prefix,ucell,Nrepeat,Element_atypes,Symbol_atypes):
     Na = Nrepeat[0]
     Nb = Nrepeat[1]
