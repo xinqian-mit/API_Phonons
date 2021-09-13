@@ -1,21 +1,12 @@
 from ase.calculators.lammpslib import LAMMPSlib
 import numpy as np
-from phonopy import Phonopy
-from phonopy.structure.atoms import PhonopyAtoms
-import phonopy.interface.vasp as phonVasp
-import phonopy.units as Units
-from math import pi
-import os, glob
-import os.path
-import shutil
+
 import ase.io as io
 from matscipy.neighbours import neighbour_list
-import ase
-import multiprocessing as mp
-#from joblib import Parallel, delayed  
-import copy as cp
+
+
 import API_phonopy as api_ph
-from matscipy.neighbours import neighbour_list
+
 from numba import njit 
 
 ## ------------------------------------- Get Lammps box parameters -----------------------------------------------------##
@@ -180,7 +171,7 @@ def write_ScellCar_MaterStudio(Prefix,ucell,Nrepeat,Element_atypes,Symbol_atypes
     mol_id = ucell.get_array('mol-id')
     pos_ucell = ucell.get_positions()
     charges_ucell = ucell.get_initial_charges()
-    Natoms = Na*Nb*Nc*Nbasis
+    #Natoms = Na*Nb*Nc*Nbasis
     
     Elements = np.unique(Element_atypes)
                         
