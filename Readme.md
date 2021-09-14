@@ -38,8 +38,7 @@ I add the decorator @njit for just-in-time compilation, which would increase the
 ### Tips for Installation:
 
 #### thirdorder.py and fourthorder.py
-Both thirdorder.py & Fourthorder.py has been modified to python3 version, please unzip the ThirdFourthOrder_py3.tar.xz
-for compilation, and add them to PYTHONPATH for import.
+Both thirdorder.py & Fourthorder.py needs to be added to PYTHONPATH for import.
 
 #### quippy pakage
 It is recommended to compile using gcc and python 3.8 for the quippy packages.
