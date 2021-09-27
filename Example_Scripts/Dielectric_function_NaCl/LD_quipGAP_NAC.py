@@ -1,20 +1,12 @@
 import matplotlib
 matplotlib.use('agg') # This line is necessary for non-gui linux systems
-import matplotlib.pyplot as plt
-from matplotlib import rc
 import numpy as np
 from phonopy import Phonopy
 import phonopy.interface.vasp as Intf_vasp
-from phonopy.structure.atoms import PhonopyAtoms
 import phonopy.file_IO as PhonIO
 from phonopy.interface.calculator import get_default_physical_units
 import API_quippy as api_q # remember to set this module to python path
 import API_phonopy as api_phon
-
-# set-up latex
-plt.rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
-plt.rc('text', usetex=True)
-plt.rc('font', family='serif')
 
 gp_xml_file= "./soap_n12l11_6.0cut_coul/gp_NaCl_soap_coul.xml"
 #gp_xml_file= "/home/proteus/Softwares/Pot_NaCl/gp_NaCl_soap_coul.xml"
