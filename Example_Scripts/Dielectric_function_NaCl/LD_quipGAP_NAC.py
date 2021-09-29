@@ -40,12 +40,15 @@ if Relax:
     relax = BFGS(ucell_ase)
 
     relax.run(fmax=fmax)
-    ucell_ph = api_ph.aseAtoms_to_phonopyAtoms(ucell_ase)
-    Intf_vasp.write_vasp('POSCAR_relx',ucell_ph)
+    Unit_cell = api_ph.aseAtoms_to_phonopyAtoms(ucell_ase)
+    Intf_vasp.write_vasp('POSCAR_relx',Unit_cell)
+    
+else:
+    Unit_cell = Intf_vasp.read_vasp("POSCAR") # read prim cell from the POSCAR file
 
 
 # generate displacements
-Unit_cell = Intf_vasp.read_vasp("POSCAR_relx") # read prim cell from the POSCAR file
+
 prim_mat = np.eye(3)#[[0, 0.5, 0.5],[0.5, 0, 0.5],[0.5, 0.5, 0]]
 phonon_scell = Phonopy(Unit_cell,np.diag(Ncells),primitive_matrix=prim_mat) # generate an phononpy object for LD calc.
 phonon_scell.generate_displacements(distance=0.03) # vasp
