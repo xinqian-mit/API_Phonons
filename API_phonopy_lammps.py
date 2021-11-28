@@ -148,7 +148,7 @@ def get_DFSETS_lmp(Scell0,Scell_snaps,cmds,atomtypes='atomic',logfile='log.lammp
     return displacements,forces
 
 
-#---------------------------------------------File io-------------------------------------------------------------#
+#---------------------------------------------File io--------------------------------------------------#
 def read_extxyz(filename,index=':'):
     Snaps = io.read(filename, format='extxyz',index=index)
     energies = []
@@ -210,7 +210,7 @@ def write_ScellCar_MaterStudio(Prefix,ucell,Nrepeat,Element_atypes,Symbol_atypes
             if sym_ele == ele_atype_ib:
                 Num_ele_ucell[iele] += 1
                 
-    max_num_ele = len(str(np.max(Num_ele_ucell*Na*Nb*Nc)))+2
+    #max_num_ele = len(str(np.max(Num_ele_ucell*Na*Nb*Nc)))+2
     fom='{:4s}    {:-13.9f}  {:-13.9f}  {:-13.9f} XXXX {:' + str(len_id)+ 'g}      {:3s}      {:2s}  {:-.4f}\n'; 
         
     
@@ -238,9 +238,7 @@ def write_ScellCar_MaterStudio(Prefix,ucell,Nrepeat,Element_atypes,Symbol_atypes
                     fid.write(fom.format(aindex,pos[0],pos[1],pos[2],mol_id[ib]+icell*Nmols_ucell,symbol,element,charges_ucell[ib]))
                     icell = icell +1
     fid.write('end')
-    fid.close()
-                    
-                    
+    fid.close()                                      
                     
 
 
@@ -387,8 +385,10 @@ def write_lmp_dump(filename,Cell_snaps):
             fid.write('{} {} {:6f} {:6f} {:6f} {:6f} {:6f} {:6f}\n'.format(iat,atype,pos[iat][0],pos[iat][1],pos[iat][2],vel[iat][0],vel[iat][1],vel[iat][2]))
     fid.close()
     
+
 # --------------------------- Computing transmisstion matrices for interfaces ------------------------------------#
     
+
 def Compute_MAB_matrix_Gamma(FC2,eigs,molID,groupA,groupB):
     """
     This computes the energy exchange matrix between group A and group B
