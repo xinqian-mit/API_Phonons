@@ -317,7 +317,7 @@ def write_ScellCar_MaterStudio_ucell(Prefix,ucell,Nrepeat,Element_atypes,Symbol_
                             aindex = element+str(aaint)
 
                     fid.write(fom.format(aindex,pos[0],pos[1],pos[2],mol_id[ib]+icell*Nmols_ucell,symbol,element,charges_ucell[ib]))
-                    icell = icell +1
+                icell = icell +1
     fid.write('end')
     fid.close()
 
