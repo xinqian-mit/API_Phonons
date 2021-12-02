@@ -241,6 +241,86 @@ def write_ScellCar_MaterStudio(Prefix,ucell,Nrepeat,Element_atypes,Symbol_atypes
     fid.close()                                      
                     
 
+def write_ScellCar_MaterStudio_ucell(Prefix,ucell,Nrepeat,Element_atypes,Symbol_atypes):
+    # This function has different for loops, where the ib is inner most loop.
+    Na = Nrepeat[0]
+    Nb = Nrepeat[1]
+    Nc = Nrepeat[2]
+    fid = open(Prefix+str(Na)+str(Nb)+str(Nc)+'.car','w')
+    
+    Nbasis = ucell.get_global_number_of_atoms()
+    atyp_ucell = ucell.get_tags() # remember to set the type as tags
+    ucell_vec = ucell.get_cell()
+    mol_id = ucell.get_array('mol-id')
+    pos_ucell = ucell.get_positions()
+    charges_ucell = ucell.get_initial_charges()
+    #Natoms = Na*Nb*Nc*Nbasis
+    
+    Elements = np.unique(Element_atypes)
+                        
+    Num_ele = np.zeros(len(Elements),dtype='int64')
+    
+    alpha = np.arccos(np.dot(ucell_vec[1],ucell_vec[2])/np.linalg.norm(ucell_vec[1])/np.linalg.norm(ucell_vec[2]))/np.pi*180
+    beta = np.arccos(np.dot(ucell_vec[2],ucell_vec[0])/np.linalg.norm(ucell_vec[2])/np.linalg.norm(ucell_vec[0]))/np.pi*180
+    gamma = np.arccos(np.dot(ucell_vec[0],ucell_vec[1])/np.linalg.norm(ucell_vec[0])/np.linalg.norm(ucell_vec[1]))/np.pi*180
+    
+    La = np.linalg.norm(ucell_vec[0])*Na
+    Lb = np.linalg.norm(ucell_vec[1])*Nb
+    Lc = np.linalg.norm(ucell_vec[2])*Nc
+    
+    Nmols_ucell = len(np.unique(mol_id))
+    
+    mol_id_max = Nmols_ucell*Na*Nb*Nc
+    len_id = len(str(mol_id_max))
+    
+    
+    
+    fid.write('!BIOSYM archive 3\n');
+    fid.write('PBC=ON\n');
+    fid.write('Materials Studio Generated CAR File\n');
+    fid.write('!DATE Sat Mar 12 15:36:48 2016\n');
+    fid.write('PBC    {:.4f}    {:.4f}   {:.4f}   {:.4f}   {:.4f}  {:.4f} (P1)\n'.format(La,Lb,Lc,alpha,beta,gamma));
+       
+    
+    Num_ele_ucell = np.zeros(len(Elements),dtype='int64')
+    for ib in range(Nbasis):
+        atype = atyp_ucell[ib]-1
+        ele_atype_ib = Element_atypes[atype]
+        for iele,sym_ele in enumerate(Elements):
+            if sym_ele == ele_atype_ib:
+                Num_ele_ucell[iele] += 1
+                
+    #max_num_ele = len(str(np.max(Num_ele_ucell*Na*Nb*Nc)))+2
+    fom='{:4s}    {:-13.9f}  {:-13.9f}  {:-13.9f} XXXX {:' + str(len_id)+ 'g}      {:3s}      {:2s}  {:-.4f}\n'; 
+        
+    
+
+    
+    
+    icell = 0
+    for iz in range(Nc):
+        for iy in range(Nb):
+            for ix in range(Na):
+                for ib in range(Nbasis):
+                    
+                    pos = pos_ucell[ib,:] + ix*ucell_vec[0,:] + iy*ucell_vec[1,:] + iz*ucell_vec[2,:]
+                    atype = atyp_ucell[ib]-1 # I'm assuming the tags start counting from 1.
+                    element = Element_atypes[atype]
+                    symbol = Symbol_atypes[atype]
+                    
+                    for iele,sym_ele in enumerate(Elements):
+                        if sym_ele == element:
+                            Num_ele[iele] +=1
+                            aaint = Num_ele[iele]%Num_ele_ucell[iele]
+                            if aaint == 0:
+                                aaint = Num_ele_ucell[iele]
+                            aindex = element+str(aaint)
+
+                    fid.write(fom.format(aindex,pos[0],pos[1],pos[2],mol_id[ib]+icell*Nmols_ucell,symbol,element,charges_ucell[ib]))
+                    icell = icell +1
+    fid.write('end')
+    fid.close()
+
 
 def read_lmp_data(in_file,Z_of_type):
     cell0 = io.read(in_file,format='lammps-data')
