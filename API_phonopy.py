@@ -194,7 +194,9 @@ def mode_cv(temp, freqsTHz):  # freqs (eV)
     cv_eVK = Kb * x ** 2 * expVal / (expVal - 1.0) ** 2
     cv_eVK[freqs<1e-5] = 0
     eVtoJ = 1.60218e-19
-    return  eVtoJ*cv_eVK# in J/K
+    cv = eVtoJ*cv_eVK
+    cv[np.isnan(cv)]=0.0
+    return  cv# in J/K
     
 @njit 
 def calc_Amp_displacement(T,freq_THz,mass):
