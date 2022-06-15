@@ -25,7 +25,7 @@ Nrepeat=[2,2,2]
 prim = [[0, 0.5, 0.5],[0.5, 0, 0.5],[0.5, 0.5, 0]]
 nacl = crystal(['Na', 'Cl'], [(0, 0, 0), (0.5, 0.5, 0.5)], spacegroup=225,
                cellpar=[a, a, a, 90, 90, 90])
-
+nacl = api_ph.aseAtoms_to_phonopyAtoms(nacl)
 phonon = Phonopy(nacl,np.diag(Nrepeat),primitive_matrix=prim)
 phonon.generate_displacements(distance=0.03) # vasp
 Scell0 = api_ph.phonopyAtoms_to_aseAtoms(phonon.get_supercell())
