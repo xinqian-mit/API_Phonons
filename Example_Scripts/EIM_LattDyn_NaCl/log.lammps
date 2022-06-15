@@ -1,17 +1,37 @@
-LAMMPS (24 Aug 2020)
+LAMMPS (29 Sep 2021 - Update 1)
 units metal
 atom_style atomic
 atom_modify map array sort 0 0
 boundary p p p
 box tilt large
-region cell prism    0 11.994262291300782 0 10.387335844003802 0 9.793274151606587     5.997131145798412 5.997131145798412 3.462445281235539     units box
+region cell prism    0 11.30829893534 0 11.30829893534 0 11.30829893534     0.0 0.0 0.0     units box
 create_box 2 cell
-Created triclinic box = (0.0000000 0.0000000 0.0000000) to (11.994262 10.387336 9.7932742) with tilt (5.9971311 5.9971311 3.4624453)
-WARNING: Triclinic box skew is large (../domain.cpp:219)
+Created triclinic box = (0.0000000 0.0000000 0.0000000) to (11.308299 11.308299 11.308299) with tilt (0.0000000 0.0000000 0.0000000)
   1 by 1 by 1 MPI processor grid
 echo none
-Created 54 atoms
+Created 64 atoms
+  using lattice units in triclinic box = (0.0000000 0.0000000 0.0000000) to (11.308299 11.308299 11.308299) with tilt (0.0000000 0.0000000 0.0000000)
   create_atoms CPU = 0.000 seconds
+Setting atom values ...
+  1 settings made for type
+Setting atom values ...
+  1 settings made for type
+Setting atom values ...
+  1 settings made for type
+Setting atom values ...
+  1 settings made for type
+Setting atom values ...
+  1 settings made for type
+Setting atom values ...
+  1 settings made for type
+Setting atom values ...
+  1 settings made for type
+Setting atom values ...
+  1 settings made for type
+Setting atom values ...
+  1 settings made for type
+Setting atom values ...
+  1 settings made for type
 Setting atom values ...
   1 settings made for type
 Setting atom values ...
@@ -139,25 +159,25 @@ variable pe equal pe
 neigh_modify delay 0 every 1 check yes
 echo none
 run 0
-WARNING: No fixes defined, atoms won't move (../verlet.cpp:54)
+WARNING: No fixes defined, atoms won't move (../verlet.cpp:55)
 Neighbor list info ...
   update every 1 steps, delay 0 steps, check yes
   max neighbors/atom: 2000, page size: 100000
   master list distance cutoff = 9.606
   ghost atom cutoff = 9.606
-  binsize = 4.803, bins = 5 3 3
+  binsize = 4.803, bins = 3 3 3
   1 neighbor lists, perpetual/occasional/extra = 1 0 0
   (1) pair eim, perpetual
       attributes: half, newton on
       pair build: half/bin/newton/tri
-      stencil: half/bin/3d/newton/tri
+      stencil: half/bin/3d/tri
       bin: standard
-Per MPI rank memory allocation (min/avg/max) = 3.243 | 3.243 | 3.243 Mbytes
+Per MPI rank memory allocation (min/avg/max) = 3.253 | 3.253 | 3.253 Mbytes
 PotEng Pxx E_mol E_coul 
-  -178.91902   -13626.969            0            0 
-Loop time of 9.53674e-07 on 1 procs for 0 steps with 54 atoms
+  -212.04891   -13584.006            0            0 
+Loop time of 1.90735e-06 on 1 procs for 0 steps with 64 atoms
 
-314.6% CPU use with 1 MPI tasks x no OpenMP threads
+4561.3% CPU use with 1 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -167,16 +187,16 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 9.537e-07  |            |       |100.00
+Other   |            | 1.907e-06  |            |       |100.00
 
-Nlocal:        54.0000 ave          54 max          54 min
+Nlocal:        64.0000 ave          64 max          64 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
-Nghost:        1187.00 ave        1187 max        1187 min
+Nghost:        1267.00 ave        1267 max        1267 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
-Neighs:        4590.00 ave        4590 max        4590 min
+Neighs:        5440.00 ave        5440 max        5440 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
 
-Total # of neighbors = 4590
+Total # of neighbors = 5440
 Ave neighs/atom = 85.000000
 Neighbor list builds = 0
 Dangerous builds = 0
