@@ -1,13 +1,12 @@
 # API_Phonons
 ----
 This is a API that interfaces ase, lammps, phonopy, alamode thirdorder.py, Fourthorder.py and quippy for phonon calulations, written
-by Xin Qian (CU Boulder, MIT). <br />
+by Xin Qian (CU Boulder, MIT,HUST). <br />
 <br />
 This package is developed to make it easy to extract  force constants and phononic properties of any 
 empirical or machine learning potentials, or directly from AIMD data. The API_*.py files contains functions for interfacing 
 different packages,and computing phononic properties. This package also provided examples  for computing those different properties including 
-harmonic/thirdorder/fourth force constants, or dielectric tensor, or self-consistently compute force constants renormalized at higher temperatures, which even works
-for dynamically unstable system with soft phonon modes. <br />
+harmonic/thirdorder/fourth force constants, or dielectric tensor, or self-consistently compute force constants renormalized at higher temperatures, which even works for dynamically unstable system with soft phonon modes. <br />
 <br />
 
 ### Reference
@@ -111,7 +110,7 @@ A simple example of how to generate an inteface or gap using ase package <br />
 A simple example of how to compute radial distribution function g(r) <br />
 
 #### SW_aSi_AFModel:<br />
-An example of computing modal diffusivity using Allan-Feldman's throy, under testing,currently still relatively slow. The code is partially accelerated using paralllelized numba.  <br />
+An example of computing amorphous silicon thermal conductivity using Allen-Feldman Theory.  <br />
 
 #### EIM_LattDyn_NaCl:<br />
 This gives example how we can interface lammps and phonopy to perform lattice dynamics based on the EIM potential supported
