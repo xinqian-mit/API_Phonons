@@ -21,11 +21,11 @@ import AllanFeldman as AF
 # In[2]:
 
 
-mesh = [1,1,1]
+mesh = [1,1,1] # at only gamma point.
 T = 300
 Gamma = np.array([0,0,0])
 load_data = False
-
+broad_factor = 5.0
 phonon = phonopy.load(supercell_matrix=[1,1,1],primitive_matrix='auto',
                      unitcell_filename="POSCAR_512_SWrelx",
                      force_constants_filename='FORCE_CONSTANTS') # load the force constants.
@@ -34,6 +34,11 @@ phonon = phonopy.load(supercell_matrix=[1,1,1],primitive_matrix='auto',
 # In[3]:
 
 
+Vx,Vy,Vz = AF.get_Va_ijbc(phonon)
+
+
+# In[4]:
+
 
 if load_data == False:
     
@@ -41,6 +46,7 @@ if load_data == False:
                 with_eigenvectors=True,with_group_velocities=True,
                 is_mesh_symmetry=True) # get full mesh set to false
     qpoints, weights, frequencies, eigvecs = phonon.get_mesh()
+    eigvecs = eigvecs[0] # at Gamma Point
     freqs = frequencies[0]
     LineWidth = np.mean(np.diff(frequencies[0]))
 
@@ -49,30 +55,31 @@ if load_data == False:
 
     Vol = phonon.get_supercell().get_volume()*1e-30
     
-    Dmodes,Vmat = AF.AF_diffusivity_q(phonon,Gamma,LineWidth=LineWidth)
-    k = np.sum(Cmodes*Dmodes/Vol)
-else:
-    Vol = phonon.get_supercell().get_volume()*1e-30
-    freqs = np.load('freqs.npy')
-    Cmodes = api_ph.mode_cv(T,freqs)
-    Dmodes = np.load('Dmodes.npy')
-
-    k = np.sum(Cmodes*Dmodes/Vol)
-
-print(['k= '+str(k)+' W/mK'])
+    
 
 
-# In[7]:
+# In[5]:
 
 
-plt.loglog(freqs,np.abs(Dmodes)*1e4,'.')
-plt.xlim([1,20])
-plt.ylim([1e-5,1])
+Vx_flat,Vy_flat,Vz_flat = AF.get_Va_ijbc(phonon)
+vx_modepairs,vy_modepairs,vz_modepairs = AF.get_velmat_modepairs(freqs,eigvecs,Vx_flat,Vy_flat,Vz_flat)
+Broadening = broad_factor*np.mean(np.diff(freqs))
+Diffusivities = AF.calc_Diff(freqs,vx_modepairs,vy_modepairs,vz_modepairs,LineWidth=Broadening)
+
+
+# In[14]:
+
+
+plt.semilogy(freqs[3:],Diffusivities[3:],'o')
 plt.xlabel('Frequency (THz)')
-plt.ylabel('Diffusivity ($cm^2$/s)')
+plt.ylabel('Diffusivity ($m^2$/s)')
 
-np.save('Dmodes.npy',Dmodes)
-np.save('freqs.npy',freqs)
+
+# In[13]:
+
+
+k = np.sum(Cmodes[3:]*Diffusivities[3:]/Vol)
+print(k)
 
 
 # In[ ]:
