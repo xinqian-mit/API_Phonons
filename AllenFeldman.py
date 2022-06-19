@@ -7,7 +7,7 @@ from API_phonopy import phonopyAtoms_to_aseAtoms,aseAtoms_to_phonopyAtoms
 def get_Va_ijbc(phonon):
     """
     obtain the velocity operator
-    (Va)_ij^bc = (Ria-Rja)*\Phi_ij^bc/2/sqrt(Mi*Mj)
+    (Va)_ij^bc = (Ria-Rja)*\Phi_ij^bc/sqrt(Mi*Mj)
     """
     atoms = phonopyAtoms_to_aseAtoms(phonon.get_primitive()) # supercell and primitive cell should be the same.
     masses = atoms.get_masses()
