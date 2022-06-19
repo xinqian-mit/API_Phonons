@@ -36,7 +36,6 @@ phonon.run_mesh(mesh, is_gamma_center=True,
 qpoints, weights, frequencies, eigvecs = phonon.get_mesh()
 eigvecs = eigvecs[0] # at Gamma Point
 freqs = frequencies[0]
-LineWidth = np.mean(np.diff(frequencies[0]))
 
 
 Cmodes = api_ph.mode_cv(T,freqs)
