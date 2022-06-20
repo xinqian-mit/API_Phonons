@@ -16,7 +16,7 @@ from joblib import Parallel, delayed
 import copy as cp
 from numba import njit
 import h5py 
-
+import hiphive
 
 ## -------------------------------------- Convert atom object type between packages ----------------------------------------------#
 def aseAtoms_to_phonopyAtoms(aseAtoms):
@@ -361,10 +361,33 @@ def write_phonopy_fc2_hdf5(filename,fc2):
         f.create_dataset('fc2',data=fc2,compression='gzip')
         f.flush()
 
-def write_phonopy_fc3_hdf5(filename,fc3):
-    with h5py.File(filename, 'w') as f:
-        f.create_dataset('fc3',data=fc3,compression='gzip')
-        f.flush()
+def write_phonopy_fc3(filename: str, fc3):
+    """Writes third order force constant matrix in phonopy hdf5 format.
+
+    Parameters
+    ----------
+    filename : str
+        output file name
+    fc3 : ForceConstants or numpy.ndarray
+        third order force constant matrix
+    """
+
+    if isinstance(fc3, hiphive.ForceConstants):
+        fc3_array = fc3.get_fc_array(order=3)
+    elif isinstance(fc3, np.ndarray):
+        fc3_array = fc3
+    else:
+        raise TypeError('fc3 should be ForceConstants or NumPy array')
+
+    # check that fc3 has correct shape
+    n_atoms = fc3_array.shape[0]
+    if fc3_array.shape != (n_atoms, n_atoms, n_atoms, 3, 3, 3):
+        raise ValueError('fc3 has wrong shape')
+
+    with h5py.File(filename, 'w') as hf:
+        hf.create_dataset('fc3', data=fc3_array, compression='gzip')
+        hf.flush()
+
 
 def write_band_structure(filename,phonon):
     band_dict = phonon.get_band_structure_dict()
