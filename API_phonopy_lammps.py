@@ -566,8 +566,6 @@ def calc_PartRatio_mesh(phonon):
     # eigvecs should be calculated using set_mesh at gamma point
     qpoints, weights, frequencies, eigvecs = phonon.get_mesh()
     
-    Den = 0;
-    
     (Nqpoints,Natoms_x3,Nmodes)=np.shape(eigvecs)
     Natoms = int(Natoms_x3/3)    
     

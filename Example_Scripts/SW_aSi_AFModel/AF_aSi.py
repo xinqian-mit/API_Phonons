@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 import matplotlib
 #matplotlib.use('agg') # This line is necessary for non-gui linux systems
 import matplotlib.pyplot as plt
@@ -16,10 +13,7 @@ import phonopy.file_IO as PhonIO
 from phonopy.interface.calculator import get_default_physical_units
 import API_phonopy as api_ph
 import AllenFeldman as AF
-
-
-# In[2]:
-
+from API_phonopy_lammps import calc_PartRatio_mesh
 
 mesh = [1,1,1] # at only gamma point.
 T = 300
@@ -28,10 +22,6 @@ broad_factor = 5.0
 phonon = phonopy.load(supercell_matrix=[1,1,1],primitive_matrix='auto',
                      unitcell_filename="POSCAR_512_SWrelx",
                      force_constants_filename='FORCE_CONSTANTS') # load the force constants.
-
-
-# In[3]:
-
 
 phonon.run_mesh(mesh, is_gamma_center=True, 
             with_eigenvectors=True,with_group_velocities=True,
@@ -46,10 +36,6 @@ Cmodes = api_ph.mode_cv(T,freqs)
 Vol = phonon.get_supercell().get_volume()*1e-30
    
 
-
-# In[4]:
-
-
 vx_modepairs,vy_modepairs,vz_modepairs = AF.get_velmat_modepairs_q(phonon,Gamma)
 Diffusivities = AF.calc_Diff(freqs,vx_modepairs,vy_modepairs,vz_modepairs,LineWidth=Broadening)
 plt.semilogy(freqs[3:],Diffusivities[3:],'o')
@@ -57,15 +43,11 @@ plt.xlabel('Frequency (THz)')
 plt.ylabel('Diffusivity ($m^2$/s)')
 
 
-# In[5]:
-
+freqs,PartRatio = calc_PartRatio_mesh(phonon)
+plt.plot(freqs[0],PartRatio[0],'o')
+plt.xlabel('Frequency (THz)')
+plt.ylabel('Participation Ratio')
 
 k = np.sum(Cmodes[3:]*Diffusivities[3:]/Vol)
-print(k)
-
-
-# In[ ]:
-
-
-
+print('k = '+str(k)+' W/mK')
 
