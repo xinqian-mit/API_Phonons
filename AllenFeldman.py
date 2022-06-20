@@ -44,13 +44,13 @@ def get_velmat_modepairs_q(phonon,q,factor=VaspToTHz):
     sqrt_fnfm = np.sqrt(freqs.T*freqs)
     
     temp_vx = np.dot(ddm[0],eigvecs)
-    vx_modepairs = np.dot(eigvecs.conjugate().T,temp_vx)/sqrt_fnfm/2/np.pi*factor**2 # ATHz
+    vx_modepairs = 1j*np.dot(eigvecs.conjugate().T,temp_vx)/sqrt_fnfm/2/np.pi*factor**2 # ATHz
     
     temp_vy = np.dot(ddm[1],eigvecs)
-    vy_modepairs = np.dot(eigvecs.conjugate().T,temp_vx)/sqrt_fnfm/2/np.pi*factor**2 # ATHz
+    vy_modepairs = 1j*np.dot(eigvecs.conjugate().T,temp_vx)/sqrt_fnfm/2/np.pi*factor**2 # ATHz
     
     temp_vz = np.dot(ddm[2],eigvecs)
-    vz_modepairs = np.dot(eigvecs.conjugate().T,temp_vz)/sqrt_fnfm/2/np.pi*factor**2 # ATHz
+    vz_modepairs = 1j*np.dot(eigvecs.conjugate().T,temp_vz)/sqrt_fnfm/2/np.pi*factor**2 # ATHz
     
     return vx_modepairs,vy_modepairs,vz_modepairs
 
@@ -73,7 +73,7 @@ def delta_square(x,width):
         return 0.0
     
 # Here, the linewidth is set at a fixed number. If one use the true linewidths, we get Dornadio's model.    
-@njit(parallel=True)
+#@njit(parallel=True)
 def calc_Diff(freqs,vx_modepairs,vy_modepairs,vz_modepairs,LineWidth=1e-2,factor=VaspToTHz):
     A2m = 1e-10
     THz2Hz = 1e12
@@ -85,7 +85,7 @@ def calc_Diff(freqs,vx_modepairs,vy_modepairs,vz_modepairs,LineWidth=1e-2,factor
     Diffusivity = np.zeros(Nmodes)
             
     
-    for s in prange(Nmodes):
+    for s in range(Nmodes):
         Diff_s = 0.0
         ws = freqs[s]*2*np.pi
         for r in range(Nmodes):            
