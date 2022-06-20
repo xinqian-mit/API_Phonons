@@ -14,7 +14,8 @@ import ase
 import multiprocessing as mp
 from joblib import Parallel, delayed
 import copy as cp
-from numba import njit 
+from numba import njit
+import h5py 
 
 
 ## -------------------------------------- Convert atom object type between packages ----------------------------------------------#
