@@ -99,5 +99,6 @@ def calc_Diff(freqs,vx_modepairs,vy_modepairs,vz_modepairs,LineWidth=1e-2,factor
     return Diffusivity
     
 
+#def calc_Cv_modepairs(freqs,T):
 
     

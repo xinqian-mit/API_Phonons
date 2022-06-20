@@ -356,6 +356,37 @@ def disp_atom_along_mode_qs(q_red,eigvec,Ncells,prim_cell): # here the time phas
     
 ## -------------------------------------- File I/O ----------------------------------------------# 
 
+def read_phono3py_hdf5(mesh):
+    if mesh[0]==0 & mesh[1]==0 & mesh[2]==0:
+        filename = 'kappa-m{}{}{}-g0.hdf5'.format(mesh[0],mesh[1],mesh[2])
+    else:
+        filename = 'kappa-m{}{}{}.hdf5'.format(mesh[0],mesh[1],mesh[2])
+        
+    ph3_data = h5py.File(filename,'r')
+    freqs = ph3_data['frequency'][:]
+    gamma = ph3_data['gamma'][:]
+    qpoints = ph3_data['qpoint'][:]
+    weights = ph3_data['weight'][:]
+    kappaT_raw = ph3_data['kappa'][:]
+    
+    kappaT = []
+    for kappa_raw in kappaT_raw:
+        kappa = np.zeros((3,3))
+        kappa[0,0] = kappa_raw[0]
+        kappa[1,1] = kappa_raw[1]
+        kappa[2,2] = kappa_raw[2]
+        kappa[1,2] = kappa_raw[3]
+        kappa[0,2] = kappa_raw[4]
+        kappa[0,1] = kappa_raw[5]
+    
+        kappa[2,1] = kappa[1,2]
+        kappa[2,0] = kappa[0,2]
+        kappa[1,0] = kappa[0,1]
+        
+        kappaT.append(kappa)
+        
+    return qpoints,weights,freqs,gamma,kappaT
+
 def write_phonopy_fc2_hdf5(filename,fc2):
     with h5py.File(filename, 'w') as f:
         f.create_dataset('fc2',data=fc2,compression='gzip')
