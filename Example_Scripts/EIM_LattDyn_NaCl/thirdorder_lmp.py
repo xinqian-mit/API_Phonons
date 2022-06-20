@@ -10,12 +10,8 @@ import phonopy.interface.vasp as Intf_vasp
 from phonopy.structure.atoms import PhonopyAtoms
 import phonopy.file_IO as PhonIO
 import API_phonopy as api_ph # remember to set this module to python path
-import os, glob
-import os.path
-import shutil
-import sys
 import API_phonopy_lammps as api_pl
-
+import os
 
 Nrepeat = [3,3,3]
 nneigh = 4 # neighbor cutoff
