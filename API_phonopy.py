@@ -361,7 +361,7 @@ def write_phonopy_fc2_hdf5(filename,fc2):
         f.create_dataset('fc2',data=fc2,compression='gzip')
         f.flush()
 
-def write_phonopy_fc3(filename: str, fc3):
+def write_phonopy_fc3_hdf5(filename: str, fc3):
     """Writes third order force constant matrix in phonopy hdf5 format.
 
     Parameters
