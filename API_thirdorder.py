@@ -34,14 +34,14 @@ import thirdorder_core
 from thirdorder_common import *
 
 
-def read_POSCAR(directory):
+def read_POSCAR(directory,filename="POSCAR"):
     """
     Return all the relevant information contained in a POSCAR file.
     """
     with dir_context(directory):
         nruter = dict()
         nruter["lattvec"] = np.empty((3, 3))
-        f = open("POSCAR", "r")
+        f = open(filename, "r")
         firstline = next(f)
         factor = .1 * float(next(f).strip())
         for i in xrange(3):
