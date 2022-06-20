@@ -354,6 +354,17 @@ def disp_atom_along_mode_qs(q_red,eigvec,Ncells,prim_cell): # here the time phas
     
     
 ## -------------------------------------- File I/O ----------------------------------------------# 
+
+def write_phonopy_fc2_hdf5(filename,fc2):
+    with h5py.File(filename) as f:
+        f.create_dataset('fc2',data=fc2,compression='gzip')
+        f.flush()
+
+def write_phonopy_fc3_hdf5(filename,fc3):
+    with h5py.File(filename) as f:
+        f.create_dataset('fc3',data=fc3,compression='gzip')
+        f.flush()
+
 def write_band_structure(filename,phonon):
     band_dict = phonon.get_band_structure_dict()
     freqs_paths = band_dict['frequencies']
