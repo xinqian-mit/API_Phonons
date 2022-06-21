@@ -18,10 +18,11 @@ from API_phonopy_lammps import calc_PartRatio_mesh
 mesh = [1,1,1] # at only gamma point.
 T = 300
 Gamma = np.array([0,0,0])
-broad_factor = 5.0
+broad_factor = 1.0
 phonon = phonopy.load(supercell_matrix=[1,1,1],primitive_matrix='auto',
                      unitcell_filename="POSCAR_512_SWrelx",
                      force_constants_filename='FORCE_CONSTANTS') # load the force constants.
+
 
 phonon.run_mesh(mesh, is_gamma_center=True, 
             with_eigenvectors=True,with_group_velocities=True,
@@ -47,6 +48,7 @@ freqs,PartRatio = calc_PartRatio_mesh(phonon)
 plt.plot(freqs[0],PartRatio[0],'o')
 plt.xlabel('Frequency (THz)')
 plt.ylabel('Participation Ratio')
+
 
 k = np.sum(Cmodes[3:]*Diffusivities[3:]/Vol)
 print('k = '+str(k)+' W/mK')

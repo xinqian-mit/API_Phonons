@@ -3,8 +3,9 @@ from phonopy.units import VaspToTHz,AMU,EV
 from phonopy.harmonic.force_constants import similarity_transformation
 from numba import jit,njit,prange
 from API_phonopy import phonopyAtoms_to_aseAtoms,aseAtoms_to_phonopyAtoms
-
-
+import API_phonopy as api_ph
+import phonopy.units as Units
+from phonopy.units import Kb, THzToEv
 
 def get_dq_dynmat_q(phonon,q,dq=1e-5):
     #phonon._set_group_velocity()
@@ -44,20 +45,17 @@ def get_velmat_modepairs_q(phonon,q,factor=VaspToTHz):
     sqrt_fnfm = np.sqrt(freqs.T*freqs)
     
     temp_vx = np.dot(ddm[0],eigvecs)
-    vx_modepairs = 1j*np.dot(eigvecs.conjugate().T,temp_vx)/sqrt_fnfm/2/np.pi*factor**2 # ATHz
+    vx_modepairs = np.dot(eigvecs.conjugate().T,temp_vx)/sqrt_fnfm/2*factor**2 # ATHz
     
     temp_vy = np.dot(ddm[1],eigvecs)
-    vy_modepairs = 1j*np.dot(eigvecs.conjugate().T,temp_vx)/sqrt_fnfm/2/np.pi*factor**2 # ATHz
+    vy_modepairs = np.dot(eigvecs.conjugate().T,temp_vx)/sqrt_fnfm/2*factor**2 # ATHz
     
     temp_vz = np.dot(ddm[2],eigvecs)
-    vz_modepairs = 1j*np.dot(eigvecs.conjugate().T,temp_vz)/sqrt_fnfm/2/np.pi*factor**2 # ATHz
+    vz_modepairs = np.dot(eigvecs.conjugate().T,temp_vz)/sqrt_fnfm/2*factor**2 # ATHz
     
     return vx_modepairs,vy_modepairs,vz_modepairs
 
 
-@njit
-def delta_lorentz( x, width):
-    return (width)/(x*x + width*width)/np.pi
 
 
 @njit 
@@ -88,17 +86,49 @@ def calc_Diff(freqs,vx_modepairs,vy_modepairs,vz_modepairs,LineWidth=1e-2,factor
     for s in range(Nmodes):
         Diff_s = 0.0
         ws = freqs[s]*2*np.pi
+
         for r in range(Nmodes):            
             wr = freqs[r]*2*np.pi
             wsr_avg = (ws+wr)/2.0
-            tau_sr = double_lorentz(ws,wr,LineWidth,LineWidth) # THz^-1                                        
-            Diff_s += wsr_avg**2*np.abs((vx_modepairs[s,r]*vx_modepairs[r,s]+vy_modepairs[s,r]*vy_modepairs[r,s]+vz_modepairs[s,r]*vz_modepairs[r,s]).real)*tau_sr/3.0       
+            tau_sr = double_lorentz(ws,wr,LineWidth,LineWidth) # THz^-1
+            if r != s:                                        
+                Diff_s += wsr_avg**2*np.abs((vx_modepairs[s,r]*vx_modepairs[r,s]+vy_modepairs[s,r]*vy_modepairs[r,s]+vz_modepairs[s,r]*vz_modepairs[r,s]).real)*tau_sr/3.0       
         Diffusivity[s] = Diff_s*(A2m**2*THz2Hz)/(ws**2) #A^2THz^4/THz^2*THz-1 = A^2THz
     
     
     return Diffusivity
     
 
-#def calc_Cv_modepairs(freqs,T):
-
+def calc_Cv_modepairs_q(freqs_THz,T):
     
+    if T==0:
+        n_modes = 0
+        Cs = np.zeros(freqs_THz.shape)
+    else:
+        freqs = np.abs(freqs_THz)*THzToEv
+        x = freqs / Kb / T
+        expVal = np.exp(x)
+        n_modes = 1/(expVal-1.0)
+        Cs = Kb * x ** 2 * expVal / (expVal - 1.0) ** 2
+        
+    Nmodes = len(freqs_THz) #number of modes
+    
+    Ws,Wr = np.meshgrid(freqs_THz+1e-7,freqs_THz) # small offset
+    Ns,Nr = np.meshgrid(n_modes,n_modes)
+    
+    Csr = Ws*Wr*(Ns-Nr)/(Wr-Ws)/T + np.diag(Cs) #eV/K
+    eVtoJ = 1.60218e-19
+    Csr = Csr*eVtoJ # J/K
+    
+    return Csr
+     
+
+
+def Tau_modepairs_q(freqs_THz,gamma):
+    Ws,Wr = np.meshgrid(freqs_THz, freqs_THz)
+    Gs,Gr = np.meshgrid(gamma, gamma)
+    Tau_sr = (Gs+Gr)/((Ws-Wr)**2+(Gs+Gr)**2+1e-6) # ps
+    
+    #Tau_sr[np.isnan(Tau_sr) or np.isinf(Tau_sr)] = 0
+    
+    return Tau_sr
