@@ -10,7 +10,7 @@ import subprocess
 import h5py
 from phonopy.phonon.degeneracy import degenerate_sets
 
-def get_QHGK_thermal_conductvity_at_T(phonon,mesh,T,nac=False): # single temperature
+def calc_QHGK_phono3py_at_T(phonon,mesh,T,nac=False): # single temperature
     Nrepeat = phonon.get_supercell_matrix().diagonal()
     if nac:
         phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --nac --br --mesh="'\
