@@ -29,7 +29,7 @@ def calc_QHGK_phono3py_at_T(phonon,mesh,T,nac=False): # single temperature
     subprocess.call(phono3py_cmd, shell=True)
     qpoints,weights,freqs,gamma,kappaT = api_ph.read_phono3py_hdf5(mesh)
     phonon.set_mesh(mesh)
-    unit_to_WmK = (Angstrom*THz)**2 /(Angstrom**3*THz)
+    unit_to_WmK = (Angstrom*THz)**2 /(Angstrom**3*THz)/2/np.pi
 
     kxx,kyy,kzz,kxy,kyz,kxz = (0,0,0,0,0,0)
     kxx_ph,kyy_ph,kzz_ph,kxy_ph,kyz_ph,kxz_ph = (0,0,0,0,0,0)
@@ -354,4 +354,4 @@ def Tau_modepairs_q(freqs_THz,gamma):
     Tau_sr[np.isnan(Tau_sr)] = 0
     #Tau_sr[np.isnan(Tau_sr) or np.isinf(Tau_sr)] = 0
     
-    return Tau_sr/2/np.pi
+    return Tau_sr
