@@ -8,12 +8,18 @@ import phonopy.units as Units
 from phonopy.units import EV, Angstrom, Kb, THz, THzToEv
 import subprocess
 import h5py
+from phonopy.phonon.degeneracy import degenerate_sets
 
-def get_QHGK_thermal_conductvity_at_T(phonon,mesh,T): # single temperature
+def get_QHGK_thermal_conductvity_at_T(phonon,mesh,T,nac=False): # single temperature
     Nrepeat = phonon.get_supercell_matrix().diagonal()
-    phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --br --mesh="'\
-               '{} {} {}" --ts="{}"'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
-                                             mesh[0],mesh[1],mesh[2], str(T))
+    if nac:
+        phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --nac --br --mesh="'\
+                   '{} {} {}" --ts="{}"'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
+                                                 mesh[0],mesh[1],mesh[2], str(T))   
+    else:
+        phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --br --mesh="'\
+                   '{} {} {}" --ts="{}"'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
+                                                 mesh[0],mesh[1],mesh[2], str(T))
 
     #phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --br --mesh="'\
     #               '{} {} {}" --ts="{}"'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
@@ -51,17 +57,22 @@ def get_QHGK_thermal_conductvity_at_T(phonon,mesh,T): # single temperature
         gamma_q[gamma_q ==0 ] = np.inf
         #tau_q = 1/(gamma_q*2)/(2*np.pi)   
 
-        vx_mp_q,vy_mp_q,vz_mp_q = get_velmat_modepairs_q(phonon,q)
+        gvm = get_velmat_modepairs_q(phonon,q)
+        vx_mp_q = gvm[0]
+        vy_mp_q = gvm[1]
+        vz_mp_q = gvm[2]
+        
+        #vx_mp_q,vy_mp_q,vz_mp_q = symmetrize_group_velocity_matrix_at_q(vx_mp_q,vy_mp_q,vz_mp_q,phonon,q)
 
         C_mp_q = calc_Cv_modepairs_q(freqs_q,T)/Vol/np.prod(mesh)*weight_q # pairwise specific heat.
         Tau_mp = Tau_modepairs_q(freqs_q,gamma_q)# in ps
 
-        Kxxq_modes = np.real(C_mp_q*vx_mp_q*vx_mp_q*Tau_mp)*unit_to_WmK
-        Kyyq_modes = np.real(C_mp_q*vy_mp_q*vy_mp_q*Tau_mp)*unit_to_WmK
-        Kzzq_modes = np.real(C_mp_q*vy_mp_q*vy_mp_q*Tau_mp)*unit_to_WmK
-        Kxyq_modes = np.real(C_mp_q*vx_mp_q*vy_mp_q*Tau_mp)*unit_to_WmK
-        Kyzq_modes = np.real(C_mp_q*vy_mp_q*vz_mp_q*Tau_mp)*unit_to_WmK
-        Kxzq_modes = np.real(C_mp_q*vx_mp_q*vz_mp_q*Tau_mp)*unit_to_WmK
+        Kxxq_modes = np.real(C_mp_q*vx_mp_q.conjugate()*vx_mp_q*Tau_mp)*unit_to_WmK
+        Kyyq_modes = np.real(C_mp_q*vy_mp_q.conjugate()*vy_mp_q*Tau_mp)*unit_to_WmK
+        Kzzq_modes = np.real(C_mp_q*vy_mp_q.conjugate()*vy_mp_q*Tau_mp)*unit_to_WmK
+        Kxyq_modes = np.real(C_mp_q*vx_mp_q.conjugate()*vy_mp_q*Tau_mp)*unit_to_WmK
+        Kyzq_modes = np.real(C_mp_q*vy_mp_q.conjugate()*vz_mp_q*Tau_mp)*unit_to_WmK
+        Kxzq_modes = np.real(C_mp_q*vx_mp_q.conjugate()*vz_mp_q*Tau_mp)*unit_to_WmK
 
         Kxx_mp.append(Kxxq_modes)
         Kyy_mp.append(Kyyq_modes)
@@ -129,77 +140,128 @@ def get_dq_dynmat_q(phonon,q,dq=1e-5):
     _gv = phonon._group_velocity
     ddm = _gv._get_dD(q)
     
-    
-    #_reciprocal_lattice_inv = phonon.get_primitive().cell    
-    #dq0 = dq*np.array([1,0,0])           
-    #dm_p0 = phonon.get_dynamical_matrix_at_q(q + dq0)
-    #dm_m0 = phonon.get_dynamical_matrix_at_q(q - dq0)
-    #ddm0 = (dm_p0 - dm_m0)/dq/2.0
-    
-    #dq1 = dq*np.array([0,1,0])        
-    #dm_p1 = phonon.get_dynamical_matrix_at_q(q + dq1)
-    #dm_m1 = phonon.get_dynamical_matrix_at_q(q - dq1)    
-    #ddm1 = (dm_p1 - dm_m1)/dq/2.0
-    
-    #dq2 = dq*np.array([0,0,1])   
-    #dm_p2 = phonon.get_dynamical_matrix_at_q(q + dq2)
-    #dm_m2 = phonon.get_dynamical_matrix_at_q(q - dq2)
-    #ddm2 = (dm_p2 - dm_m2)/dq/2.0    
-    
-    #ddmx = ddm0*_reciprocal_lattice_inv[0,0] + ddm1*_reciprocal_lattice_inv[1,0] + ddm2*_reciprocal_lattice_inv[2,0]
-    #ddmy = ddm0*_reciprocal_lattice_inv[0,1] + ddm1*_reciprocal_lattice_inv[1,1] + ddm2*_reciprocal_lattice_inv[2,1]
-    #ddmz = ddm0*_reciprocal_lattice_inv[0,2] + ddm1*_reciprocal_lattice_inv[1,2] + ddm2*_reciprocal_lattice_inv[2,2]
-    
     #ddm = [ddmx,ddmy,ddmz]
     return ddm[1:]
-    
 
-def get_velmat_modepairs_q(phonon,q,factor=VaspToTHz):
-    freqs,eigvecs = phonon.get_frequencies_with_eigenvectors(q)
-    ddm = get_dq_dynmat_q(phonon,q) # three components.
-    
-    sqrt_fnfm = np.sqrt(freqs.T*freqs)
-    
-    temp_vx = np.dot(ddm[0],eigvecs)
-    vx_modepairs = np.dot(eigvecs.conjugate().T,temp_vx)/sqrt_fnfm/2*factor**2 # ATHz
-    #vx_modepairs = vx_modepairs.real
-    #vx_modepairs = (vx_modepairs+vx_modepairs.T)/2
-    
-    temp_vy = np.dot(ddm[1],eigvecs)
-    vy_modepairs = np.dot(eigvecs.conjugate().T,temp_vx)/sqrt_fnfm/2*factor**2 # ATHz
-    #vy_modepairs = vy_modepairs.real
-    #vy_modepairs = (vy_modepairs+vy_modepairs.T)/2
-    
-    temp_vz = np.dot(ddm[2],eigvecs)
-    vz_modepairs = np.dot(eigvecs.conjugate().T,temp_vz)/sqrt_fnfm/2*factor**2 # ATHz
-    #vz_modepairs = vz_modepairs.real
-    #vz_modepairs = (vz_modepairs+vz_modepairs.T)/2
-    
-    phonon.set_group_velocity()
-    gv = phonon.get_group_velocity_at_q(q)
-    
-    vx_diag = np.diag(vx_modepairs.diagonal())
-    vx_ndiag = vx_modepairs-vx_diag
-    vx_ph = np.diag(gv[:,0])
-    vx_modepairs = vx_ndiag+vx_ph
-    
-    vy_diag = np.diag(vy_modepairs.diagonal())
-    vy_ndiag = vy_modepairs-vy_diag
-    vy_ph = np.diag(gv[:,1])
-    vy_modepairs = vy_ndiag+vy_ph
-    
-    vz_diag = np.diag(vz_modepairs.diagonal())
-    vz_ndiag = vz_modepairs-vz_diag
-    vz_ph = np.diag(gv[:,2])
-    vz_modepairs = vz_ndiag+vz_ph    
-    return vx_modepairs,vy_modepairs,vz_modepairs
 
+def get_velmat_modepairs_q(phonon, q, factor=VaspToTHz,cutoff_frequency=1e-4): # suitable for crystalline system.
+    
+    if np.linalg.norm(q) < 1e-4: # at Gamma point.
+        freqs,eigvecs = phonon.get_frequencies_with_eigenvectors(q)
+        ddm = get_dq_dynmat_q(phonon,q) # three components.
+    
+        sqrt_fnfm = np.sqrt(freqs.T*freqs)
+    
+        temp_vx = np.dot(ddm[0],eigvecs)*factor**2
+        vx_modepairs = np.dot(eigvecs.conjugate().T,temp_vx)/sqrt_fnfm/2/(2*np.pi) # ATHz
+
+    
+        temp_vy = np.dot(ddm[1],eigvecs)*factor**2
+        vy_modepairs = np.dot(eigvecs.conjugate().T,temp_vx)/sqrt_fnfm/2/(2*np.pi) # ATHz
+
+    
+        temp_vz = np.dot(ddm[2],eigvecs)*factor**2
+        vz_modepairs = np.dot(eigvecs.conjugate().T,temp_vz)/sqrt_fnfm/2/(2*np.pi) # ATHz
+        
+        gvm = np.array([vx_modepairs,vy_modepairs,vz_modepairs])
+        
+        return gvm
+    
+    else:
+    
+        dm = phonon.get_dynamical_matrix_at_q(q) 
+        eigvals, eigvecs = np.linalg.eigh(dm)
+        eigvals = eigvals.real
+        freqs = np.sqrt(abs(eigvals)) * np.sign(eigvals) * factor #angular
+        deg_sets = degenerate_sets(freqs)
+        phonon._set_group_velocity()
+        _gv = phonon._group_velocity
+        ddms = _gv._get_dD(q)
+        rot_eigvecs = np.zeros_like(eigvecs)
+
+        for deg in deg_sets:
+            rot_eigvecs[:, deg] = rot_eigsets(ddms, eigvecs[:, deg])
+        condition = freqs > cutoff_frequency
+        freqs = np.where(condition, freqs, 1)
+        rot_eigvecs = rot_eigvecs * np.where(condition, 1 / np.sqrt(2 * freqs), 0)
+
+        gvm = np.zeros((3,) + eigvecs.shape,'complex')
+        for i, ddm in enumerate(ddms[1:]):
+            ddm = ddm * (factor**2)
+            gvm[i] = np.dot(rot_eigvecs.T.conj(), np.dot(ddm, rot_eigvecs))
+
+        if _gv._perturbation is None:
+            if _gv._symmetry is None:
+                return gvm
+            else:
+                if np.linalg.norm(q) == 0: # if at Gamma point, don't symmetrize
+                    return gvm
+                else:
+                    return symmetrize_group_velocity_matrix(gvm, phonon, q)
+        else:
+            return gvm
+
+def symmetrize_group_velocity_matrix(gvm, phonon, q):
+    """Symmetrize obtained group velocity matrices.
+
+    The following symmetries are applied:
+    1. site symmetries
+    2. band hermicity
+
+    """
+    # site symmetries
+    _gv = phonon._group_velocity
+    rotations = []
+    for r in _gv._symmetry.reciprocal_operations:
+        q_in_BZ = q - np.rint(q)
+        diff = q_in_BZ - np.dot(r, q_in_BZ)
+        if (np.abs(diff) < _gv._symmetry.tolerance).all():
+            rotations.append(r)
+
+    gvm_sym = np.zeros_like(gvm)
+    for r in rotations:
+        r_cart = similarity_transformation(_gv._reciprocal_lattice, r)
+        gvm_sym += np.einsum("ij,jkl->ikl", r_cart, gvm)
+    gvm_sym = gvm_sym / len(rotations)
+
+    # band hermicity
+    gvm_sym = (gvm_sym + gvm_sym.transpose(0, 2, 1).conj()) / 2
+
+    return gvm_sym
+
+def rot_eigsets( ddms, eigsets):
+    """Treat degeneracy.
+
+    Eigenvectors of degenerates bands in eigsets are rotated to make
+    the velocity analytical in a specified direction (self._directions[0]).
+
+    Parameters
+    ----------
+    ddms : list of ndarray
+        List of delta (derivative or finite difference) of dynamical
+        matrices along several q-directions for perturbation.
+        shape=(len(self._directions), num_band, num_band), dtype=complex
+    eigsets : ndarray
+        List of phonon eigenvectors of degenerate bands.
+        shape=(num_band, num_degenerates), dtype=complex
+
+    Returns
+    -------
+    rot_eigvecs : ndarray
+    Rotated eigenvectors.
+    shape=(num_band, num_degenerates), dtype=complex
+
+    """
+    _, eigvecs = np.linalg.eigh(np.dot(eigsets.T.conj(), np.dot(ddms[0], eigsets)))
+    rotated_eigsets = np.dot(eigsets, eigvecs)
+
+    return rotated_eigsets
 
 
 
 @njit 
 def double_lorentz(w1,w2,width1,width2):
-    return (width1+width2)/((w1-w2)*(w1-w2)+(width1+width2)**2)/np.pi/2.0
+    return (width1+width2)/((w1-w2)*(w1-w2)+(width1+width2)**2)
 
     
 @njit
@@ -211,10 +273,11 @@ def delta_square(x,width):
     
 # Here, the linewidth is set at a fixed number. If one use the true linewidths, we get Dornadio's model.    
 #@njit(parallel=True)
-def calc_Diff(freqs,vx_modepairs,vy_modepairs,vz_modepairs,LineWidth=1e-2,factor=VaspToTHz):
-    A2m = 1e-10
-    THz2Hz = 1e12
-    
+def calc_Diff(freqs,gvm,LineWidth=1e-2,factor=VaspToTHz):
+
+    vx_modepairs = gvm[0]
+    vy_modepairs = gvm[1]
+    vz_modepairs = gvm[2]
 
     Nmodes = len(freqs) #number of modes
 
@@ -232,7 +295,7 @@ def calc_Diff(freqs,vx_modepairs,vy_modepairs,vz_modepairs,LineWidth=1e-2,factor
             tau_sr = double_lorentz(ws,wr,LineWidth,LineWidth) # THz^-1
             if r != s:                                        
                 Diff_s += wsr_avg**2*np.abs((vx_modepairs[s,r]*vx_modepairs[r,s]+vy_modepairs[s,r]*vy_modepairs[r,s]+vz_modepairs[s,r]*vz_modepairs[r,s]).real)*tau_sr/3.0       
-        Diffusivity[s] = Diff_s*(A2m**2*THz2Hz)/(ws**2) #A^2THz^4/THz^2*THz-1 = A^2THz
+        Diffusivity[s] = Diff_s*(Angstrom**2*THz)/(ws**2) #A^2THz^4/THz^2*THz-1 = A^2THz
     
     
     return Diffusivity
@@ -265,9 +328,11 @@ def calc_Cv_modepairs_q(freqs_THz,T):
 
 
 def Tau_modepairs_q(freqs_THz,gamma):
-
+    
+    
     #gamma = 2*np.pi*gamma
-    Ws,Wr = np.meshgrid(2*np.pi*freqs_THz,2*np.pi*freqs_THz)
+    
+    Ws,Wr = np.meshgrid(freqs_THz*2*np.pi,freqs_THz*2*np.pi)
     Gs,Gr = np.meshgrid(gamma, gamma) # convert to angular frequency linewidths.
     
     Num =Gs+Gr
@@ -284,9 +349,9 @@ def Tau_modepairs_q(freqs_THz,gamma):
     tau_s = 1/(gamma*2)
     
     Tau_sr_ndiag = Tau_sr - np.diag(Tau_sr.diagonal())
-    Tau_sr = (np.diag(tau_s) + Tau_sr_ndiag)/2/np.pi
+    Tau_sr = (np.diag(tau_s) + Tau_sr_ndiag)
     
     Tau_sr[np.isnan(Tau_sr)] = 0
     #Tau_sr[np.isnan(Tau_sr) or np.isinf(Tau_sr)] = 0
     
-    return Tau_sr
+    return Tau_sr/2/np.pi
