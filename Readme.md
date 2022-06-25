@@ -113,7 +113,7 @@ A simple example of how to compute radial distribution function g(r) <br />
 An example of computing amorphous silicon thermal conductivity using Allen-Feldman Theory.  <br />
 
 
-### EIM_AnHar_QHGK_NaCl:<br />
+#### EIM_AnHar_QHGK_NaCl:<br />
 Compute the thermal conductivity of EIM NaCl using quasi-harmonic Green Kubo relations (quantum version). phono3py needs to be activated to obtain
 phonon linewidths. The velocity matrix operators are computed the same way in the Allen-Feldman model.
 
