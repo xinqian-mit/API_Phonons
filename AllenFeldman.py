@@ -5,13 +5,15 @@ from numba import jit,njit,prange
 from API_phonopy import phonopyAtoms_to_aseAtoms,aseAtoms_to_phonopyAtoms
 import API_phonopy as api_ph
 import phonopy.units as Units
-from phonopy.units import EV, Angstrom, Kb, THz, THzToEv
+from phonopy.units import EV, Angstrom, Kb, THz, THzToEv, Hbar,PlanckConstant
 import subprocess
 import h5py
 from phonopy.phonon.degeneracy import degenerate_sets
 
 def calc_QHGK_phono3py_at_T(phonon,mesh,T,nac=False): # single temperature
     Nrepeat = phonon.get_supercell_matrix().diagonal()
+    
+
     if nac:
         phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --nac --br --mesh="'\
                    '{} {} {}" --ts="{}"'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
@@ -21,15 +23,11 @@ def calc_QHGK_phono3py_at_T(phonon,mesh,T,nac=False): # single temperature
                    '{} {} {}" --ts="{}"'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
                                                  mesh[0],mesh[1],mesh[2], str(T))
 
-    #phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --br --mesh="'\
-    #               '{} {} {}" --ts="{}"'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
-    #                                             mesh[0],mesh[1],mesh[2], ' '.join(str(T) for T in Temperatures))
-
-
     subprocess.call(phono3py_cmd, shell=True)
+
     qpoints,weights,freqs,gamma,kappaT = api_ph.read_phono3py_hdf5(mesh)
     phonon.set_mesh(mesh)
-    unit_to_WmK = (Angstrom*THz)**2 /(Angstrom**3*THz)/2/np.pi
+    unit_to_WmK = (Angstrom*THz)**2 /(Angstrom**3)
 
     kxx,kyy,kzz,kxy,kyz,kxz = (0,0,0,0,0,0)
     kxx_ph,kyy_ph,kzz_ph,kxy_ph,kyz_ph,kxz_ph = (0,0,0,0,0,0)
@@ -58,32 +56,33 @@ def calc_QHGK_phono3py_at_T(phonon,mesh,T,nac=False): # single temperature
         #tau_q = 1/(gamma_q*2)/(2*np.pi)   
 
         gvm = get_velmat_modepairs_q(phonon,q)
-        vx_mp_q = gvm[0]
-        vy_mp_q = gvm[1]
-        vz_mp_q = gvm[2]
+        
+        gvm_by_gvm = get_velmat_by_velmat_q(gvm,phonon,q)
+
+
         
         #vx_mp_q,vy_mp_q,vz_mp_q = symmetrize_group_velocity_matrix_at_q(vx_mp_q,vy_mp_q,vz_mp_q,phonon,q)
 
-        C_mp_q = calc_Cv_modepairs_q(freqs_q,T)/Vol/np.prod(mesh)*weight_q # pairwise specific heat.
-        Tau_mp = Tau_modepairs_q(freqs_q,gamma_q)# in ps
+        C_mp_q = calc_Cv_modepairs_q(freqs_q,T)/Vol/np.prod(mesh) # pairwise specific heat.
+        Tau_mp = Tau_modepairs_ph3_q(freqs_q,gamma_q) # in seconds
 
-        Kxxq_modes = np.real(C_mp_q*vx_mp_q.conjugate()*vx_mp_q*Tau_mp)*unit_to_WmK
-        Kyyq_modes = np.real(C_mp_q*vy_mp_q.conjugate()*vy_mp_q*Tau_mp)*unit_to_WmK
-        Kzzq_modes = np.real(C_mp_q*vy_mp_q.conjugate()*vy_mp_q*Tau_mp)*unit_to_WmK
-        Kxyq_modes = np.real(C_mp_q*vx_mp_q.conjugate()*vy_mp_q*Tau_mp)*unit_to_WmK
-        Kyzq_modes = np.real(C_mp_q*vy_mp_q.conjugate()*vz_mp_q*Tau_mp)*unit_to_WmK
-        Kxzq_modes = np.real(C_mp_q*vx_mp_q.conjugate()*vz_mp_q*Tau_mp)*unit_to_WmK
+        Kxxq_modes = np.real(C_mp_q*gvm_by_gvm[0]*Tau_mp)*weight_q*unit_to_WmK
+        Kyyq_modes = np.real(C_mp_q*gvm_by_gvm[1]*Tau_mp)*weight_q*unit_to_WmK
+        Kzzq_modes = np.real(C_mp_q*gvm_by_gvm[2]*Tau_mp)*weight_q*unit_to_WmK
+        Kxyq_modes = np.real(C_mp_q*gvm_by_gvm[3]*Tau_mp)*weight_q*unit_to_WmK
+        Kyzq_modes = np.real(C_mp_q*gvm_by_gvm[4]*Tau_mp)*weight_q*unit_to_WmK
+        Kxzq_modes = np.real(C_mp_q*gvm_by_gvm[5]*Tau_mp)*weight_q*unit_to_WmK
 
         Kxx_mp.append(Kxxq_modes)
         Kyy_mp.append(Kyyq_modes)
         Kzz_mp.append(Kzzq_modes)
 
-        kxx += np.sum(Kxxq_modes).real
-        kyy += np.sum(Kyyq_modes).real
-        kzz += np.sum(Kzzq_modes).real
-        kxy += np.sum(Kxyq_modes).real
-        kyz += np.sum(Kyzq_modes).real
-        kxz += np.sum(Kxzq_modes).real
+        kxx += np.sum(Kxxq_modes)
+        kyy += np.sum(Kyyq_modes)
+        kzz += np.sum(Kzzq_modes)
+        kxy += np.sum(Kxyq_modes)
+        kyz += np.sum(Kyzq_modes)
+        kxz += np.sum(Kxzq_modes)
 
         #gv = phonon.get_group_velocity_at_q(q)
 
@@ -143,6 +142,46 @@ def get_dq_dynmat_q(phonon,q,dq=1e-5):
     #ddm = [ddmx,ddmy,ddmz]
     return ddm[1:]
 
+
+
+
+def get_velmat_by_velmat_q(gvm,phonon,q):
+    """
+    output vnm x vnm. the first dimension is cartisian indices, in the order of 
+    xx,yy,zz,xy,yz,xz.
+
+    """
+    rots =  phonon.symmetry.reciprocal_operations
+    gvm_by_gvm = np.zeros((6,)+gvm.shape[1:],dtype=gvm.dtype)
+    
+    reclat = np.linalg.inv(phonon.get_primitive().cell)
+    multi = 0
+    
+    rots_sitesym = []
+    
+    # compute rotational multiplicity.
+    
+    for rot in rots:
+        q_rot = np.dot(rot,q)
+        diff = q - q_rot
+        diff -= np.rint(diff)
+        dist = np.linalg.norm(np.dot(reclat, diff))
+        if dist < phonon.symmetry.tolerance:
+            multi += 1
+            rots_sitesym.append(rot)
+
+    
+    for idir,ij in enumerate([[0,0],[1,1],[2,2],[0,1],[1,2],[0,2]]):
+        for rot in rots_sitesym:
+            r_cart = similarity_transformation(reclat, rot)
+            r_gvm = np.einsum("ij,jkl->ikl",r_cart,gvm)
+            gvm_by_gvm[idir] += r_gvm[ij[0]]*r_gvm[ij[1]]
+            
+        gvm_by_gvm[idir] /= multi # symmetrize gvm_by_gvm
+        
+        
+    return gvm_by_gvm
+        
 
 def get_velmat_modepairs_q(phonon, q, factor=VaspToTHz,cutoff_frequency=1e-4): # suitable for crystalline system.
     
@@ -315,7 +354,7 @@ def calc_Cv_modepairs_q(freqs_THz,T):
         
     Nmodes = len(freqs_THz) #number of modes
     
-    Ws,Wr = np.meshgrid(freqs_THz+1e-7,freqs_THz) # small offset
+    Ws,Wr = np.meshgrid(freqs+1e-10,freqs) # small offset
     Ns,Nr = np.meshgrid(n_modes,n_modes)
     
     Csr = Ws*Wr*(Ns-Nr)/(Wr-Ws)/T 
@@ -327,13 +366,14 @@ def calc_Cv_modepairs_q(freqs_THz,T):
      
 
 
-def Tau_modepairs_q(freqs_THz,gamma):
+def Tau_modepairs_ph3_q(freqs_THz,gamma):
     
+    """
+    phono3py linewidths to compute mode-transition time among mode pairs.
+    """
     
-    #gamma = 2*np.pi*gamma
-    
-    Ws,Wr = np.meshgrid(freqs_THz*2*np.pi,freqs_THz*2*np.pi)
-    Gs,Gr = np.meshgrid(gamma, gamma) # convert to angular frequency linewidths.
+    Ws,Wr = np.meshgrid(freqs_THz*THzToEv,freqs_THz*THzToEv)
+    Gs,Gr = np.meshgrid(gamma*THzToEv, gamma*THzToEv) # convert to angular frequency linewidths.
     
     Num =Gs+Gr
     Num[np.isnan(Num)] = 0
@@ -346,12 +386,12 @@ def Tau_modepairs_q(freqs_THz,gamma):
     
     gamma[gamma == 0] =np.inf
     
-    tau_s = 1/(gamma*2)
+    tau_s = 1/(gamma*2*THzToEv)
     
     Tau_sr_ndiag = Tau_sr - np.diag(Tau_sr.diagonal())
     Tau_sr = (np.diag(tau_s) + Tau_sr_ndiag)
     
-    Tau_sr[np.isnan(Tau_sr)] = 0
-    #Tau_sr[np.isnan(Tau_sr) or np.isinf(Tau_sr)] = 0
+    Tau_sr[np.isnan(Tau_sr)] = 0 # in eV^-1
     
+    Tau_sr = Tau_sr*Hbar # Hbar in eVs
     return Tau_sr
