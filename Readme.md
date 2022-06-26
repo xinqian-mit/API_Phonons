@@ -9,22 +9,21 @@ different packages such as phonopy, lammps, phono3py, ShengBTE etc, and phonon p
 <br />
 
 ### References
-If you find this package useful, please cite one of the following papers: <br /> 
-> Xin Qian and Ronggui Yang, Phys. Rev. B 98, 224108 (2018) <br />
-> Xin Qian, Shenyou Peng, Xiaobo Li, Yujie Wei, Ronggui Yang, Materials Today Physics 10, 100140 (2019) <br />
-
+If you find this package useful, please cite one of the following papers:  
+> Xin Qian and Ronggui Yang, Phys. Rev. B 98, 224108 (2018)  
+> Xin Qian, Shenyou Peng, Xiaobo Li, Yujie Wei, Ronggui Yang, Materials Today Physics 10, 100140 (2019)  
 ### Installation
 
 In general, one needs to use gcc, gfortran, Cython compilers and parallel libs if necessary. 
 Currently, this package is based on the following packages:<br />
 
-> **ase** 3.20.1
-> **phonopy** 2.7.1 by A. Togo: https://phonopy.github.io/phonopy 
-> **lammps** (24 Aug 2020) by Sandia National Lab: https://lammps.sandia.gov/doc/Install_tarball.html
-> **quippy & GAP** by A. Brtok and Csanyi et al.: https://libatoms.github.io/GAP/installation.html 
-> **ALM 2.0.0** by Tadano: https://alm.readthedocs.io/en/develop/ 
-> **thirorder.py** 1.1.0 by Prof. Wu Li and Prof. Mingo: http://www.shengbte.org/downloads 
-> **Fourthorder.py** by Dr.Tianli Feng and Prof. Xiulin Ruan et al.: https://github.com/FourPhonon/FourPhonon
+> **ase** 3.20.1  
+> **phonopy** 2.7.1 by A. Togo: https://phonopy.github.io/phonopy  
+> **lammps** (24 Aug 2020) by Sandia National Lab: https://lammps.sandia.gov/doc/Install_tarball.html  
+> **quippy & GAP** by A. Brtok and Csanyi et al.: https://libatoms.github.io/GAP/installation.html  
+> **ALM 2.0.0** by Tadano: https://alm.readthedocs.io/en/develop/   
+> **thirorder.py** 1.1.0 by Prof. Wu Li and Prof. Mingo: http://www.shengbte.org/downloads  
+> **Fourthorder.py** by Dr.Tianli Feng and Prof. Xiulin Ruan et al.: https://github.com/FourPhonon/FourPhonon  
 <br />
 
 Please check the mannuals for each package installing/compiling them. 
