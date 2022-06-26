@@ -1,7 +1,7 @@
 # API_Phonons
 ----
 This is a API that interfaces ase, lammps, phonopy, alamode thirdorder.py, Fourthorder.py and quippy for phonon calulations, written
-by Xin Qian (CU Boulder, MIT,HUST). <br />
+by **Xin Qian** (CU Boulder, MIT, HUST). <br />
 <br />
 This package is developed to make it easy to extract  force constants and phononic properties of any 
 empirical or machine learning potentials, or directly from AIMD data. The API_*.py files contains functions for interfacing 
@@ -10,21 +10,21 @@ different packages such as phonopy, lammps, phono3py, ShengBTE etc, and phonon p
 
 ### References
 If you find this package useful, please cite one of the following papers: <br /> 
-Xin Qian and Ronggui Yang, Phys. Rev. B 98, 224108 (2018) <br />
-Xin Qian, Shenyou Peng, Xiaobo Li, Yujie Wei, Ronggui Yang, Materials Today Physics 10, 100140 (2019) <br />
+> Xin Qian and Ronggui Yang, Phys. Rev. B 98, 224108 (2018) <br />
+> Xin Qian, Shenyou Peng, Xiaobo Li, Yujie Wei, Ronggui Yang, Materials Today Physics 10, 100140 (2019) <br />
 
 ### Installation
 
 In general, one needs to use gcc, gfortran, Cython compilers and parallel libs if necessary. 
 Currently, this package is based on the following packages:<br />
 
-ase 3.20.1<br /> 
-phonopy 2.7.1 by A. Togo: https://phonopy.github.io/phonopy <br />
-lammps (24 Aug 2020) by Sandia National Lab: https://lammps.sandia.gov/doc/Install_tarball.html<br />
-quippy & GAP by A. Brtok and Csanyi et al.: https://libatoms.github.io/GAP/installation.html <br /> 
-ALM 2.0.0 by Tadano: https://alm.readthedocs.io/en/develop/ <br />
-thirorder.py 1.1.0 by Prof. Wu Li and Prof. Mingo: http://www.shengbte.org/downloads <br />
-Fourthorder.py by Dr.Tianli Feng and Prof. Xiulin Ruan et al.: https://github.com/FourPhonon/FourPhonon<br />
+> **ase** 3.20.1
+> **phonopy** 2.7.1 by A. Togo: https://phonopy.github.io/phonopy 
+> **lammps** (24 Aug 2020) by Sandia National Lab: https://lammps.sandia.gov/doc/Install_tarball.html
+> **quippy & GAP** by A. Brtok and Csanyi et al.: https://libatoms.github.io/GAP/installation.html 
+> **ALM 2.0.0** by Tadano: https://alm.readthedocs.io/en/develop/ 
+> **thirorder.py** 1.1.0 by Prof. Wu Li and Prof. Mingo: http://www.shengbte.org/downloads 
+> **Fourthorder.py** by Dr.Tianli Feng and Prof. Xiulin Ruan et al.: https://github.com/FourPhonon/FourPhonon
 <br />
 
 Please check the mannuals for each package installing/compiling them. 
@@ -49,16 +49,16 @@ phonopy-bandplot by phonopy doesn't have this function anymore, but using bandpl
 phonopy installed.
 
 #### compiling lammps for the python interface
-When compiling lammps as python library, remember to do the following <br />
-<br />
+When compiling lammps as python library, remember to do the following: <br />
+
 ```
-cd lib/python<br />
-cp Makefile.lammps.python3 Makefile.lammps<br />
-cd ../src<br />
-make yes-python<br />
-make foo mode=shared<br />
+cd lib/python
+cp Makefile.lammps.python3 Makefile.lammps
+cd ../src
+make yes-python
+make foo mode=shared
 ```
-<br />
+
 
 ### NMA_sed
 Code and packages for computing spectral energy density from MD trajectories. See the readme.md in the folder for further details.
@@ -75,18 +75,18 @@ usage of thirdorder_gap.py is the same as thirdorder_vasp.py for ShengBTE, execu
 python3 thirdorder_gap.py na nb nc cutoff(nm)|-n GAP_potential_file <br />
 <br />
 where na nb and nc are the supercell dimensions, followed by cutoff radius or -n where -n is the number of nearest
-neighbors. There are also parallelized scripts for fc3 calculation such as thirdorder_gap_mp.py, compute with:<br />
+neighbors. There are also parallelized scripts for fc3 calculation such as thirdorder_gap_mp.py, compute using:<br />
 <br />
 ```
-python3 thirdorder_gap_mp.py na nb nc cutoff(nm)|-n Nprocesses GAP_potential_file <br />
+python3 thirdorder_gap_mp.py [na] [nb] [nc] [cutoff(nm)]|-n [Nprocesses] [GAP_potential_file]
 ```
 <br />
-Similarly, fourthorder force constants can also be evaluated using:
+Similarly, fourthorder force constants can also be extracted using:
 <br />
 ```
-python3 fourthorder_gap_mp.py na nb nc cutoff(nm)|-n Nprocesses GAP_potential_file <br />
+python3 fourthorder_gap_mp.py [na] [nb] [nc] [cutoff(nm)]|-n [Nprocesses] [GAP_potential_file]
 ```
-
+where the parameters in [] need to be specified. 
 The jupyter notebook script then computes the dielectric function.  
 for perturbated snapshots. 
 <br />
