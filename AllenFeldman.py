@@ -72,26 +72,79 @@ def calc_QHGK_phono3py_at_T(phonon,mesh,T,nac=False): # single temperature
         Kxyq_modes = np.real(C_mp_q*gvm_by_gvm[3]*Tau_mp)*weight_q*unit_to_WmK
         Kyzq_modes = np.real(C_mp_q*gvm_by_gvm[4]*Tau_mp)*weight_q*unit_to_WmK
         Kxzq_modes = np.real(C_mp_q*gvm_by_gvm[5]*Tau_mp)*weight_q*unit_to_WmK
+        
+        
+        Kxxq_modes_sym = np.zeros_like(Kxxq_modes)
+        Kyyq_modes_sym = np.zeros_like(Kyyq_modes)
+        Kzzq_modes_sym = np.zeros_like(Kzzq_modes)
+        Kxyq_modes_sym = np.zeros_like(Kxyq_modes)
+        Kyzq_modes_sym = np.zeros_like(Kyzq_modes)
+        Kxzq_modes_sym = np.zeros_like(Kxzq_modes)
+        
+        # symmetrize kijq_modes
+        Rot_lists = phonon.get_symmetry().get_symmetry_operations()['rotations']
+        Nrots = len(Rot_lists)
+        
+        # Ksym = R*K*inv(R) # symmetrize the thermal conductivity tensor        
+        for rot in Rot_lists:
+            invrot = np.linalg.inv(rot)
 
-        Kxx_mp.append(Kxxq_modes)
-        Kyy_mp.append(Kyyq_modes)
-        Kzz_mp.append(Kzzq_modes)
+            RK_xx = rot[0,0]*Kxxq_modes + rot[0,1]*Kxyq_modes + rot[0,2]*Kxzq_modes # xx*xx xy*yx xz*zx
+            RK_xy = rot[0,0]*Kxyq_modes + rot[0,1]*Kyyq_modes + rot[0,2]*Kyzq_modes # xx*xy xy*yy xz*zy
+            RK_xz = rot[0,0]*Kxzq_modes + rot[0,1]*Kyzq_modes + rot[0,2]*Kzzq_modes # xx*xz xy*yz xz*zz
+            RK_yx = rot[1,0]*Kxxq_modes + rot[1,1]*Kxyq_modes + rot[1,2]*Kxzq_modes # yx*xx yy*yx yz*zx
+            RK_yy = rot[1,0]*Kxyq_modes + rot[1,1]*Kyyq_modes + rot[1,2]*Kyzq_modes # yx*xy yy*yy yz*zy
+            RK_yz = rot[1,0]*Kxzq_modes + rot[1,1]*Kyzq_modes + rot[1,2]*Kzzq_modes # yx*xz yy*yz yz*zz        
+            RK_zx = rot[2,0]*Kxxq_modes + rot[2,1]*Kxyq_modes + rot[2,2]*Kxzq_modes # yx*xx yy*yx yz*zx
+            RK_zy = rot[2,0]*Kxyq_modes + rot[2,1]*Kyyq_modes + rot[2,2]*Kyzq_modes # yx*xy yy*yy yz*zy
+            RK_zz = rot[2,0]*Kxzq_modes + rot[2,1]*Kyzq_modes + rot[2,2]*Kzzq_modes # yx*xz yy*yz yz*zz     
+            
+            R_K_invR_xx = RK_xx*invrot[0,0] + RK_xy*invrot[1,0] + RK_xz*invrot[2,0]
+            R_K_invR_xy = RK_xx*invrot[0,1] + RK_xy*invrot[1,1] + RK_xz*invrot[2,1]
+            R_K_invR_xz = RK_xx*invrot[0,2] + RK_xy*invrot[1,2] + RK_xz*invrot[2,2]
+            R_K_invR_yx = RK_yx*invrot[0,0] + RK_yy*invrot[1,0] + RK_yz*invrot[2,0]
+            R_K_invR_yy = RK_yx*invrot[0,1] + RK_yy*invrot[1,1] + RK_yz*invrot[2,1]
+            R_K_invR_yz = RK_yx*invrot[0,2] + RK_yy*invrot[1,2] + RK_yz*invrot[2,2]
+            R_K_invR_zx = RK_zx*invrot[0,0] + RK_zy*invrot[1,0] + RK_zz*invrot[2,0]
+            R_K_invR_zy = RK_zx*invrot[0,1] + RK_zy*invrot[1,1] + RK_zz*invrot[2,1]
+            R_K_invR_zz = RK_zx*invrot[0,2] + RK_zy*invrot[1,2] + RK_zz*invrot[2,2]
+            
+            Kxxq_modes_sym += R_K_invR_xx
+            Kyyq_modes_sym += R_K_invR_yy
+            Kzzq_modes_sym += R_K_invR_zz
+            Kxyq_modes_sym += (R_K_invR_xy + R_K_invR_yx)/2
+            Kyzq_modes_sym += (R_K_invR_yz + R_K_invR_zy)/2
+            Kxzq_modes_sym += (R_K_invR_xz + R_K_invR_zx)/2
+            
+            
+        Kxxq_modes_sym = Kxxq_modes_sym/Nrots
+        Kyyq_modes_sym = Kyyq_modes_sym/Nrots
+        Kzzq_modes_sym = Kzzq_modes_sym/Nrots
+        Kxyq_modes_sym = Kxyq_modes_sym/Nrots
+        Kyzq_modes_sym = Kyzq_modes_sym/Nrots
+        Kxzq_modes_sym = Kxzq_modes_sym/Nrots
+        
+                     
+        
 
-        kxx += np.sum(Kxxq_modes)
-        kyy += np.sum(Kyyq_modes)
-        kzz += np.sum(Kzzq_modes)
-        kxy += np.sum(Kxyq_modes)
-        kyz += np.sum(Kyzq_modes)
-        kxz += np.sum(Kxzq_modes)
+        Kxx_mp.append(Kxxq_modes_sym)
+        Kyy_mp.append(Kyyq_modes_sym)
+        Kzz_mp.append(Kzzq_modes_sym)
 
-        #gv = phonon.get_group_velocity_at_q(q)
+        kxx += np.sum(Kxxq_modes_sym)
+        kyy += np.sum(Kyyq_modes_sym)
+        kzz += np.sum(Kzzq_modes_sym)
+        kxy += np.sum(Kxyq_modes_sym)
+        kyz += np.sum(Kyzq_modes_sym)
+        kxz += np.sum(Kxzq_modes_sym)
 
-        kxx_ph += np.trace(Kxxq_modes)
-        kyy_ph += np.trace(Kyyq_modes)
-        kzz_ph += np.trace(Kzzq_modes)
-        kxy_ph += np.trace(Kxyq_modes)
-        kyz_ph += np.trace(Kyzq_modes)
-        kxz_ph += np.trace(Kxzq_modes)
+
+        kxx_ph += np.trace(Kxxq_modes_sym)
+        kyy_ph += np.trace(Kyyq_modes_sym)
+        kzz_ph += np.trace(Kzzq_modes_sym)
+        kxy_ph += np.trace(Kxyq_modes_sym)
+        kyz_ph += np.trace(Kyzq_modes_sym)
+        kxz_ph += np.trace(Kxzq_modes_sym)
 
     # symmetrize according to point groups.
     kappa = np.zeros((3,3))
@@ -116,22 +169,8 @@ def calc_QHGK_phono3py_at_T(phonon,mesh,T,nac=False): # single temperature
     kappa_ph[0,2] = kxz_ph.real
     kappa_ph[2,0] = kxz_ph.real
 
-    Rot_lists = phonon.get_symmetry().get_symmetry_operations()['rotations']
 
-    Nrots = len(Rot_lists)
-
-    kappa_sym = np.zeros_like(kappa)
-    kappa_ph_sym = np.zeros_like(kappa_ph)
-    for rot in Rot_lists:
-        kappa_sym += np.matmul(np.matmul(rot,kappa),np.linalg.inv(rot))
-        kappa_ph_sym += np.matmul(np.matmul(rot,kappa_ph),np.linalg.inv(rot))
-
-    kappa_sym = kappa_sym/Nrots
-    kappa_ph_sym = kappa_ph_sym/Nrots
-        
-        
-    #CV += np.trace(C_mp_q)/Angstrom**3
-    return kappa_sym,kappa_ph_sym,Kxx_mp,Kyy_mp,Kzz_mp
+    return kappa,kappa_ph,np.array(Kxx_mp),np.array(Kyy_mp),np.array(Kzz_mp)
 
 
 def get_dq_dynmat_q(phonon,q,dq=1e-5):
