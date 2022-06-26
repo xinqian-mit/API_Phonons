@@ -74,7 +74,7 @@ usage of thirdorder_gap.py is the same as thirdorder_vasp.py for ShengBTE, execu
 ```
 python3 thirdorder_gap.py [na] [nb] [nc] [cutoff(nm)]|-[n] GAP_potential_file <br />
 ```
-where na nb and nc are the supercell dimensions, followed by cutoff radius or -n where -n is the number of nearest
+where the parameters in [] need to be specified. Parameters named na nb and nc are the supercell dimensions, followed by cutoff radius or -n where -n is the number of nearest
 neighbors. There are also parallelized scripts for fc3 calculation such as thirdorder_gap_mp.py, compute using:  
 
 ```
@@ -86,7 +86,6 @@ Similarly, fourthorder force constants can also be extracted using:
 ```
 python3 fourthorder_gap_mp.py [na] [nb] [nc] [cutoff(nm)]|-[n] [Nprocesses] [GAP_potential_file]
 ```
-where the parameters in [] need to be specified. 
 The jupyter notebook script then computes the dielectric function.  
 for perturbated snapshots.   
 
@@ -121,7 +120,7 @@ phonon linewidths. The velocity matrix operators are computed the same way in th
 #### EIM_LattDyn_NaCl:  
 This gives example how we can interface lammps and phonopy to perform lattice dynamics based on the EIM potential supported
 by lammps. Thirdorder.py and Fourthorder.py are implemented with lammps code for computing FC3 and FC4.  
-<br />
+
 #### SnapsDFT_FCs_ALM:  
 This example uses Alamode to compute force constants, based on DFT data of energy and forces of random snapshots
 The random snapshots are generated based on this paper: Phys. Rev. B 95, 014302, 2017 by Olle Hellman.   
