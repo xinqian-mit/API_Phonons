@@ -51,13 +51,13 @@ phonopy installed.
 #### compiling lammps for the python interface
 When compiling lammps as python library, remember to do the following <br />
 <br />
-'''
+```
 cd lib/python<br />
 cp Makefile.lammps.python3 Makefile.lammps<br />
 cd ../src<br />
 make yes-python<br />
 make foo mode=shared<br />
-'''
+```
 <br />
 
 ### NMA_sed
@@ -77,15 +77,15 @@ python3 thirdorder_gap.py na nb nc cutoff(nm)|-n GAP_potential_file <br />
 where na nb and nc are the supercell dimensions, followed by cutoff radius or -n where -n is the number of nearest
 neighbors. There are also parallelized scripts for fc3 calculation such as thirdorder_gap_mp.py, compute with:<br />
 <br />
-'''
+```
 python3 thirdorder_gap_mp.py na nb nc cutoff(nm)|-n Nprocesses GAP_potential_file <br />
-'''
+```
 <br />
 Similarly, fourthorder force constants can also be evaluated using:
 <br />
-'''
+```
 python3 fourthorder_gap_mp.py na nb nc cutoff(nm)|-n Nprocesses GAP_potential_file <br />
-'''
+```
 
 The jupyter notebook script then computes the dielectric function.  
 for perturbated snapshots. 
