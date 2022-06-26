@@ -1,7 +1,7 @@
 # API_Phonons
 ----
 This package interfaces ase, lammps, phonopy, alamode, thirdorder.py, Fourthorder.py and quippy for phonon calulations, written
-by **Xin Qian** (CU Boulder, MIT, HUST).  
+by **Xin Qian** (CU Boulder, MIT, HUST, current contant: xinqian21@hust.edu.cn).  
 
 **API_Phonons** is developed to make it easy to extract force constants and phononic properties of any 
 empirical or machine learning potentials, or from AIMD data. The API_*.py files contains functions for interfacing 
