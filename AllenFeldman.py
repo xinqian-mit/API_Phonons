@@ -16,11 +16,11 @@ def calc_QHGK_phono3py_at_T(phonon,mesh,T,nac=False): # single temperature
 
     if nac:
         phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --nac --br --mesh="'\
-                   '{} {} {}" --ts="{}"'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
+                   '{} {} {}" --ts="{}" > ph3.out'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
                                                  mesh[0],mesh[1],mesh[2], str(T))   
     else:
         phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --br --mesh="'\
-                   '{} {} {}" --ts="{}"'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
+                   '{} {} {}" --ts="{}" > ph3.out'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
                                                  mesh[0],mesh[1],mesh[2], str(T))
 
     subprocess.call(phono3py_cmd, shell=True)
