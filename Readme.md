@@ -5,11 +5,10 @@ by Xin Qian (CU Boulder, MIT,HUST). <br />
 <br />
 This package is developed to make it easy to extract  force constants and phononic properties of any 
 empirical or machine learning potentials, or directly from AIMD data. The API_*.py files contains functions for interfacing 
-different packages,and computing phononic properties. This package also provided examples  for computing those different properties including 
-harmonic/thirdorder/fourth force constants, or dielectric tensor, or self-consistently compute force constants renormalized at higher temperatures, which even works for dynamically unstable system with soft phonon modes. <br />
+different packages such as phonopy, lammps, phono3py, ShengBTE etc, and phonon properties can be easily calculated. API_Phonons also provided examples for computing harmonic/thirdorder/fourth force constants, dielectric tensor, high temperature dispersions, linewidths and thermal conductivity. Allen-Feldman's quantum theory for thermal transport in disordered materials and the extended quasi-harmonic green-kubo method is also included in this package. <br />
 <br />
 
-### Reference
+### References
 If you find this package useful, please cite one of the following papers: <br /> 
 Xin Qian and Ronggui Yang, Phys. Rev. B 98, 224108 (2018) <br />
 Xin Qian, Shenyou Peng, Xiaobo Li, Yujie Wei, Ronggui Yang, Materials Today Physics 10, 100140 (2019) <br />
@@ -28,11 +27,8 @@ thirorder.py 1.1.0 by Prof. Wu Li and Prof. Mingo: http://www.shengbte.org/downl
 Fourthorder.py by Dr.Tianli Feng and Prof. Xiulin Ruan et al.: https://github.com/FourPhonon/FourPhonon<br />
 <br />
 
-Check the mannuals for each package installing/compiling them. 
-Other python libraries are also required:
-matscipy <br />
-numba # This save you from implementing the code in cython. When a function is called many times,
-I add the decorator @njit for just-in-time compilation, which would increase the speed by magnitudes.
+Please check the mannuals for each package installing/compiling them. 
+Other python libraries such as matscipy and numba are also required, which is usually provided if you use anaconda.
 
 ### Tips for Installation:
 
@@ -55,11 +51,13 @@ phonopy installed.
 #### compiling lammps for the python interface
 When compiling lammps as python library, remember to do the following <br />
 <br />
+'''
 cd lib/python<br />
 cp Makefile.lammps.python3 Makefile.lammps<br />
 cd ../src<br />
 make yes-python<br />
 make foo mode=shared<br />
+'''
 <br />
 
 ### NMA_sed
@@ -79,11 +77,15 @@ python3 thirdorder_gap.py na nb nc cutoff(nm)|-n GAP_potential_file <br />
 where na nb and nc are the supercell dimensions, followed by cutoff radius or -n where -n is the number of nearest
 neighbors. There are also parallelized scripts for fc3 calculation such as thirdorder_gap_mp.py, compute with:<br />
 <br />
+'''
 python3 thirdorder_gap_mp.py na nb nc cutoff(nm)|-n Nprocesses GAP_potential_file <br />
+'''
 <br />
 Similarly, fourthorder force constants can also be evaluated using:
 <br />
+'''
 python3 fourthorder_gap_mp.py na nb nc cutoff(nm)|-n Nprocesses GAP_potential_file <br />
+'''
 
 The jupyter notebook script then computes the dielectric function.  
 for perturbated snapshots. 
