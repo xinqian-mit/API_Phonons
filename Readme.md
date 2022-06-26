@@ -1,11 +1,11 @@
 # API_Phonons
 ----
-This is an API that interfaces ase, lammps, phonopy, alamode thirdorder.py, Fourthorder.py and quippy for phonon calulations, written
+This package interfaces ase, lammps, phonopy, alamode, thirdorder.py, Fourthorder.py and quippy for phonon calulations, written
 by **Xin Qian** (CU Boulder, MIT, HUST).  
 
-This package is developed to make it easy to extract  force constants and phononic properties of any 
+**API_Phonons** is developed to make it easy to extract force constants and phononic properties of any 
 empirical or machine learning potentials, or from AIMD data. The API_*.py files contains functions for interfacing 
-different packages such as phonopy, lammps, phono3py, ShengBTE etc, and phonon properties can be easily calculated. API_Phonons also provided examples for computing harmonic/thirdorder/fourth force constants, dielectric tensor, high temperature dispersions, linewidths and thermal conductivity. Allen-Feldman's quantum theory for thermal transport in disordered materials and the extended quasi-harmonic green-kubo method is also included in this package.  
+different packages such as phonopy, lammps, phono3py, ShengBTE etc, and phonon properties can be easily calculated. The function name should be self-explanatory. **API_Phonons** also provided examples for computing harmonic/thirdorder/fourth force constants, dielectric tensor, high temperature dispersions, linewidths and thermal conductivity. Allen-Feldman's quantum theory for thermal transport in disordered materials and the extended quasi-harmonic green-kubo method is also included in this package.  
 
 ## References
 If you find this package useful, please cite one of the following papers:  
@@ -39,7 +39,7 @@ quippy.potential.Potential objects' calculate function.
 
 #### phonopy and plot bandstructures
 To have proper plot of phonon bandstructures, it's also recommended to install latex support. 
-For ubuntu just do:
+For ubuntu linux system just do:
 ```
 apt-get install texlive-latex-recommended
 ```
@@ -48,8 +48,8 @@ The python executable bandplot is used to export band.yaml files to text, new ve
 phonopy-bandplot by phonopy doesn't have this function anymore, but using bandplot requires 
 phonopy installed.
 
-#### compiling lammps for the python interface
-When compiling lammps as python library, remember to do the following: <br />
+#### lammps with the python interface
+When compiling lammps as python library, remember to do the following:  
 
 ```
 cd lib/python
@@ -58,6 +58,7 @@ cd ../src
 make yes-python
 make foo mode=shared
 ```
+Then add lammps to the envoronment variable PYTHONPATH.
 
 
 ## NMA_sed
@@ -101,7 +102,7 @@ the cell can be relaxed using optimize module from ase.
 
 The file RandDisps_SelfConsist_FC2_FC3.py and RandDisps_SelfConsit_FC2_GAP_ALM.py give examples on how to self-consistently compute second 
 and thirdorder force constants. I first use the finite displacement method, and obtain the first generation of eigenvectors. Then I used 
-the new set of FC2 and FC3, and a new set of eigenvectors. This process is iterated. Convergence can usually be achieved after ~ 5 iterations.  
+the new set of FC2, FC3, eigenvectors to generate snapshots. This process is iterated. Convergence can usually be achieved after ~ 5 iterations.  
 
 #### Generate_nacl_subnmGap:  
 A simple example of how to generate an inteface or gap using ase package.  
