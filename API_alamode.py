@@ -3,7 +3,7 @@ import sys
 import numpy as np 
 from collections import namedtuple
 from itertools import product
-from HiPhive_Supercell import Supercell
+from API_Supercell import Supercell
     
 def get_fc2_fc3(phonon,displacements,forces,is_compact_fc=False,options=None,log_level=0):
     supercell = phonon.get_supercell()

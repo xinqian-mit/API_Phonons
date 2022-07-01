@@ -17,10 +17,9 @@ import API_phonopy as api_ph
 
 Qpoints=np.array([[1e-4,1e-4,1.0],[0.5,0.5,1.0],[3./8,3./8,3./4],[0.0,0.0,0.0],[0.5,0.5,0.5]])
 band_labels=['$\Gamma$','X','K','$\Gamma$','L']
-#Qpoints = np.array([[0.5,0.0,0.0],[0,0,0],[2./3,1./3,0.0]])
-#band_labels = ['M','$\Gamma$','K']
+
 Ncells=[4,4,4] # Need to be consistent with the size one used to generate random displacements in DFSET
-qmesh=[40,40,40]
+
 Band_points=100
 NAC = True
 interface_mode = 'vasp'
