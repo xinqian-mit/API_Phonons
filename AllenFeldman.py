@@ -1,43 +1,68 @@
 import numpy as np
-from phonopy.units import VaspToTHz,AMU,EV
 from phonopy.harmonic.force_constants import similarity_transformation
-from numba import jit,njit,prange
-from API_phonopy import phonopyAtoms_to_aseAtoms,aseAtoms_to_phonopyAtoms
+from numba import njit
 import API_phonopy as api_ph
-import phonopy.units as Units
-from phonopy.units import EV, Angstrom, Kb, THz, THzToEv, Hbar,PlanckConstant
+from phonopy.units import VaspToTHz, EV, Angstrom, Kb, THz, THzToEv, Hbar
 import subprocess
-import h5py
+from os import path
 from phonopy.phonon.degeneracy import degenerate_sets
 
-def calc_QHGK_phono3py_at_T(phonon,mesh,T,nac=False): # single temperature
+def calc_QHGK_phono3py_at_T(phonon,mesh,Temperatures,load=True,nac=False,lbte=False): # single temperature
     Nrepeat = phonon.get_supercell_matrix().diagonal()
     
+    
+    if type(Temperatures) == float or type(Temperatures) == int:
+        Temperatures = np.array([Temperatures]) #convert to list
 
+
+    if type(Temperatures) == list or type(Temperatures) == tuple:             
+        Temperatures = np.array(Temperatures)
+ 
     if nac:
         phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --nac --br --mesh="'\
                    '{} {} {}" --ts="{}" > ph3.out'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
-                                                 mesh[0],mesh[1],mesh[2], str(T))   
+                                                 mesh[0],mesh[1],mesh[2], ' '.join(str(T) for T in Temperatures))  
+        if lbte:
+            phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --nac --br --lbte --mesh="'\
+                       '{} {} {}" --ts="{}" > ph3.out'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
+                                                     mesh[0],mesh[1],mesh[2],' '.join(str(T) for T in Temperatures))  
     else:
         phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --br --mesh="'\
                    '{} {} {}" --ts="{}" > ph3.out'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
-                                                 mesh[0],mesh[1],mesh[2], str(T))
+                                                 mesh[0],mesh[1],mesh[2], ' '.join(str(T) for T in Temperatures))  
+                                                 
+        if lbte:
+            phono3py_cmd = 'phono3py --dim="{} {} {}" --fc2 --fc3 --br --lbte --mesh="'\
+                       '{} {} {}" --ts="{}" > ph3.out'.format(Nrepeat[0],Nrepeat[1],Nrepeat[2], 
+                                                     mesh[0],mesh[1],mesh[2], ' '.join(str(T) for T in Temperatures))    
+                                                                                                 
 
-    subprocess.call(phono3py_cmd, shell=True)
-
-    qpoints,weights,freqs,gamma,kappaT = api_ph.read_phono3py_hdf5(mesh)
+    if load == False:
+        subprocess.call(phono3py_cmd, shell=True)
+        qpoints,weights,freqs,gamma,kappaT = api_ph.read_phono3py_hdf5(mesh)
+        
+    if load == True:
+        if mesh[0]==0 & mesh[1]==0 & mesh[2]==0:
+            filename = 'kappa-m{}{}{}-g0.hdf5'.format(mesh[0],mesh[1],mesh[2])
+        else:
+            filename = 'kappa-m{}{}{}.hdf5'.format(mesh[0],mesh[1],mesh[2])
+        
+        if path.exists(filename):
+            qpoints,weights,freqs,gamma,kappaT = api_ph.read_phono3py_hdf5(mesh)
+        
+        else:
+            subprocess.call(phono3py_cmd, shell=True)
+            qpoints,weights,freqs,gamma,kappaT = api_ph.read_phono3py_hdf5(mesh)
+            
     phonon.set_mesh(mesh)
     unit_to_WmK = (Angstrom*THz)**2 /(Angstrom**3)
 
-    kxx,kyy,kzz,kxy,kyz,kxz = (0,0,0,0,0,0)
-    kxx_ph,kyy_ph,kzz_ph,kxy_ph,kyz_ph,kxz_ph = (0,0,0,0,0,0)
+
     #CV = 0
 
     #K = 0
 
-    Kxx_mp = []
-    Kyy_mp = []
-    Kzz_mp = []
+
     Vol = phonon.get_primitive().get_volume() # get volume.
 
 
@@ -45,132 +70,178 @@ def calc_QHGK_phono3py_at_T(phonon,mesh,T,nac=False): # single temperature
     #ph3_data = h5py.File(filename,'r')
 
     #CV_qmodes = ph3_data['heat_capacity'][:][0]/Vol/np.prod(mesh)*EV
+    
+    kxx = np.zeros(Temperatures.shape)
+    kyy = np.zeros(Temperatures.shape)
+    kzz = np.zeros(Temperatures.shape)
+    kxy = np.zeros(Temperatures.shape)
+    kyz = np.zeros(Temperatures.shape)
+    kxz = np.zeros(Temperatures.shape)
+    
+    kxx_ph = np.zeros(Temperatures.shape)
+    kyy_ph = np.zeros(Temperatures.shape)
+    kzz_ph = np.zeros(Temperatures.shape)
+    kxy_ph = np.zeros(Temperatures.shape)
+    kyz_ph = np.zeros(Temperatures.shape)
+    kxz_ph = np.zeros(Temperatures.shape)
+    
+    gvm_by_gvm =[]
+    
+    # compute gvm_by_gvm which is independent of T
+    
+    #print(len(qpoints))
 
     for iq,q in enumerate(qpoints):
-        #print(q)
-        weight_q = weights[iq]
-        freqs_q = freqs[iq] #THz
-        gamma_q = gamma[0][iq] # in THz, need to convert to Trad/s.
-
-        gamma_q[gamma_q ==0 ] = np.inf
-        #tau_q = 1/(gamma_q*2)/(2*np.pi)   
-
-        gvm = get_velmat_modepairs_q(phonon,q)
         
-        gvm_by_gvm = get_velmat_by_velmat_q(gvm,phonon,q)
-
-
-        
-        #vx_mp_q,vy_mp_q,vz_mp_q = symmetrize_group_velocity_matrix_at_q(vx_mp_q,vy_mp_q,vz_mp_q,phonon,q)
-
-        C_mp_q = calc_Cv_modepairs_q(freqs_q,T)/Vol/np.prod(mesh) # pairwise specific heat.
-        Tau_mp = Tau_modepairs_ph3_q(freqs_q,gamma_q) # in seconds
-
-        Kxxq_modes = np.real(C_mp_q*gvm_by_gvm[0]*Tau_mp)*weight_q*unit_to_WmK
-        Kyyq_modes = np.real(C_mp_q*gvm_by_gvm[1]*Tau_mp)*weight_q*unit_to_WmK
-        Kzzq_modes = np.real(C_mp_q*gvm_by_gvm[2]*Tau_mp)*weight_q*unit_to_WmK
-        Kxyq_modes = np.real(C_mp_q*gvm_by_gvm[3]*Tau_mp)*weight_q*unit_to_WmK
-        Kyzq_modes = np.real(C_mp_q*gvm_by_gvm[4]*Tau_mp)*weight_q*unit_to_WmK
-        Kxzq_modes = np.real(C_mp_q*gvm_by_gvm[5]*Tau_mp)*weight_q*unit_to_WmK
+        # temperature independent properties.
+        gvm = get_velmat_modepairs_q(phonon,q) 
+        gvm_by_gvm_q = get_velmat_by_velmat_q(gvm,phonon,q)
+        gvm_by_gvm.append(gvm_by_gvm_q)
         
         
-        Kxxq_modes_sym = np.zeros_like(Kxxq_modes)
-        Kyyq_modes_sym = np.zeros_like(Kyyq_modes)
-        Kzzq_modes_sym = np.zeros_like(Kzzq_modes)
-        Kxyq_modes_sym = np.zeros_like(Kxyq_modes)
-        Kyzq_modes_sym = np.zeros_like(Kyzq_modes)
-        Kxzq_modes_sym = np.zeros_like(Kxzq_modes)
+    
+    Kxx_mp = []
+    Kyy_mp = []
+    Kzz_mp = []
+    
+    kappa = np.zeros((len(Temperatures),3,3))
+    kappa_ph = np.zeros((len(Temperatures),3,3))
+    
         
-        # symmetrize kijq_modes
-        Rot_lists = phonon.get_symmetry().get_symmetry_operations()['rotations']
-        Nrots = len(Rot_lists)
+    for iT,T in enumerate(Temperatures):
         
-        # Ksym = R*K*inv(R) # symmetrize the thermal conductivity tensor        
-        for rot in Rot_lists:
-            invrot = np.linalg.inv(rot)
-
-            RK_xx = rot[0,0]*Kxxq_modes + rot[0,1]*Kxyq_modes + rot[0,2]*Kxzq_modes # xx*xx xy*yx xz*zx
-            RK_xy = rot[0,0]*Kxyq_modes + rot[0,1]*Kyyq_modes + rot[0,2]*Kyzq_modes # xx*xy xy*yy xz*zy
-            RK_xz = rot[0,0]*Kxzq_modes + rot[0,1]*Kyzq_modes + rot[0,2]*Kzzq_modes # xx*xz xy*yz xz*zz
-            RK_yx = rot[1,0]*Kxxq_modes + rot[1,1]*Kxyq_modes + rot[1,2]*Kxzq_modes # yx*xx yy*yx yz*zx
-            RK_yy = rot[1,0]*Kxyq_modes + rot[1,1]*Kyyq_modes + rot[1,2]*Kyzq_modes # yx*xy yy*yy yz*zy
-            RK_yz = rot[1,0]*Kxzq_modes + rot[1,1]*Kyzq_modes + rot[1,2]*Kzzq_modes # yx*xz yy*yz yz*zz        
-            RK_zx = rot[2,0]*Kxxq_modes + rot[2,1]*Kxyq_modes + rot[2,2]*Kxzq_modes # yx*xx yy*yx yz*zx
-            RK_zy = rot[2,0]*Kxyq_modes + rot[2,1]*Kyyq_modes + rot[2,2]*Kyzq_modes # yx*xy yy*yy yz*zy
-            RK_zz = rot[2,0]*Kxzq_modes + rot[2,1]*Kyzq_modes + rot[2,2]*Kzzq_modes # yx*xz yy*yz yz*zz     
+        KxxT_mp = []
+        KyyT_mp = []
+        KzzT_mp = []
+        
+        for iq,q in enumerate(qpoints):
+            weight_q = weights[iq]
+            freqs_q = freqs[iq]
+            gamma_q = gamma[iT][iq] # in THz, need to convert to Trad/s.
             
-            R_K_invR_xx = RK_xx*invrot[0,0] + RK_xy*invrot[1,0] + RK_xz*invrot[2,0]
-            R_K_invR_xy = RK_xx*invrot[0,1] + RK_xy*invrot[1,1] + RK_xz*invrot[2,1]
-            R_K_invR_xz = RK_xx*invrot[0,2] + RK_xy*invrot[1,2] + RK_xz*invrot[2,2]
-            R_K_invR_yx = RK_yx*invrot[0,0] + RK_yy*invrot[1,0] + RK_yz*invrot[2,0]
-            R_K_invR_yy = RK_yx*invrot[0,1] + RK_yy*invrot[1,1] + RK_yz*invrot[2,1]
-            R_K_invR_yz = RK_yx*invrot[0,2] + RK_yy*invrot[1,2] + RK_yz*invrot[2,2]
-            R_K_invR_zx = RK_zx*invrot[0,0] + RK_zy*invrot[1,0] + RK_zz*invrot[2,0]
-            R_K_invR_zy = RK_zx*invrot[0,1] + RK_zy*invrot[1,1] + RK_zz*invrot[2,1]
-            R_K_invR_zz = RK_zx*invrot[0,2] + RK_zy*invrot[1,2] + RK_zz*invrot[2,2]
+            gamma_q[gamma_q ==0 ] = np.inf
+            C_mp_q = calc_Cv_modepairs_q(freqs_q,T)/Vol/np.prod(mesh) # pairwise specific heat.
             
-            Kxxq_modes_sym += R_K_invR_xx
-            Kyyq_modes_sym += R_K_invR_yy
-            Kzzq_modes_sym += R_K_invR_zz
-            Kxyq_modes_sym += (R_K_invR_xy + R_K_invR_yx)/2
-            Kyzq_modes_sym += (R_K_invR_yz + R_K_invR_zy)/2
-            Kxzq_modes_sym += (R_K_invR_xz + R_K_invR_zx)/2
+            Tau_mp = Tau_modepairs_ph3_q(freqs_q,gamma_q) # in seconds
+            Kxxq_modes = np.real(C_mp_q*gvm_by_gvm[iq][0]*Tau_mp)*weight_q*unit_to_WmK
+            Kyyq_modes = np.real(C_mp_q*gvm_by_gvm[iq][1]*Tau_mp)*weight_q*unit_to_WmK
+            Kzzq_modes = np.real(C_mp_q*gvm_by_gvm[iq][2]*Tau_mp)*weight_q*unit_to_WmK
+            Kxyq_modes = np.real(C_mp_q*gvm_by_gvm[iq][3]*Tau_mp)*weight_q*unit_to_WmK
+            Kyzq_modes = np.real(C_mp_q*gvm_by_gvm[iq][4]*Tau_mp)*weight_q*unit_to_WmK
+            Kxzq_modes = np.real(C_mp_q*gvm_by_gvm[iq][5]*Tau_mp)*weight_q*unit_to_WmK
+            
+            Kxxq_modes_sym = np.zeros_like(Kxxq_modes)
+            Kyyq_modes_sym = np.zeros_like(Kyyq_modes)
+            Kzzq_modes_sym = np.zeros_like(Kzzq_modes)
+            Kxyq_modes_sym = np.zeros_like(Kxyq_modes)
+            Kyzq_modes_sym = np.zeros_like(Kyzq_modes)
+            Kxzq_modes_sym = np.zeros_like(Kxzq_modes)
+            
+            #print(Kxxq_modes.shape)
             
             
-        Kxxq_modes_sym = Kxxq_modes_sym/Nrots
-        Kyyq_modes_sym = Kyyq_modes_sym/Nrots
-        Kzzq_modes_sym = Kzzq_modes_sym/Nrots
-        Kxyq_modes_sym = Kxyq_modes_sym/Nrots
-        Kyzq_modes_sym = Kyzq_modes_sym/Nrots
-        Kxzq_modes_sym = Kxzq_modes_sym/Nrots
-        
+            # symmetrize kijq_modes
+            Rot_lists = phonon.get_symmetry().get_symmetry_operations()['rotations']
+            Nrots = len(Rot_lists)
+            
+            # Ksym = R*K*inv(R) # symmetrize the thermal conductivity tensor        
+            for rot in Rot_lists:
+                invrot = np.linalg.inv(rot)
+
+                RK_xx = rot[0,0]*Kxxq_modes + rot[0,1]*Kxyq_modes + rot[0,2]*Kxzq_modes # xx*xx xy*yx xz*zx
+                RK_xy = rot[0,0]*Kxyq_modes + rot[0,1]*Kyyq_modes + rot[0,2]*Kyzq_modes # xx*xy xy*yy xz*zy
+                RK_xz = rot[0,0]*Kxzq_modes + rot[0,1]*Kyzq_modes + rot[0,2]*Kzzq_modes # xx*xz xy*yz xz*zz
+                RK_yx = rot[1,0]*Kxxq_modes + rot[1,1]*Kxyq_modes + rot[1,2]*Kxzq_modes # yx*xx yy*yx yz*zx
+                RK_yy = rot[1,0]*Kxyq_modes + rot[1,1]*Kyyq_modes + rot[1,2]*Kyzq_modes # yx*xy yy*yy yz*zy
+                RK_yz = rot[1,0]*Kxzq_modes + rot[1,1]*Kyzq_modes + rot[1,2]*Kzzq_modes # yx*xz yy*yz yz*zz        
+                RK_zx = rot[2,0]*Kxxq_modes + rot[2,1]*Kxyq_modes + rot[2,2]*Kxzq_modes # yx*xx yy*yx yz*zx
+                RK_zy = rot[2,0]*Kxyq_modes + rot[2,1]*Kyyq_modes + rot[2,2]*Kyzq_modes # yx*xy yy*yy yz*zy
+                RK_zz = rot[2,0]*Kxzq_modes + rot[2,1]*Kyzq_modes + rot[2,2]*Kzzq_modes # yx*xz yy*yz yz*zz     
+                
+                R_K_invR_xx = RK_xx*invrot[0,0] + RK_xy*invrot[1,0] + RK_xz*invrot[2,0]
+                R_K_invR_xy = RK_xx*invrot[0,1] + RK_xy*invrot[1,1] + RK_xz*invrot[2,1]
+                R_K_invR_xz = RK_xx*invrot[0,2] + RK_xy*invrot[1,2] + RK_xz*invrot[2,2]
+                R_K_invR_yx = RK_yx*invrot[0,0] + RK_yy*invrot[1,0] + RK_yz*invrot[2,0]
+                R_K_invR_yy = RK_yx*invrot[0,1] + RK_yy*invrot[1,1] + RK_yz*invrot[2,1]
+                R_K_invR_yz = RK_yx*invrot[0,2] + RK_yy*invrot[1,2] + RK_yz*invrot[2,2]
+                R_K_invR_zx = RK_zx*invrot[0,0] + RK_zy*invrot[1,0] + RK_zz*invrot[2,0]
+                R_K_invR_zy = RK_zx*invrot[0,1] + RK_zy*invrot[1,1] + RK_zz*invrot[2,1]
+                R_K_invR_zz = RK_zx*invrot[0,2] + RK_zy*invrot[1,2] + RK_zz*invrot[2,2]
+                
+                Kxxq_modes_sym += R_K_invR_xx
+                Kyyq_modes_sym += R_K_invR_yy
+                Kzzq_modes_sym += R_K_invR_zz
+                Kxyq_modes_sym += (R_K_invR_xy + R_K_invR_yx)/2
+                Kyzq_modes_sym += (R_K_invR_yz + R_K_invR_zy)/2
+                Kxzq_modes_sym += (R_K_invR_xz + R_K_invR_zx)/2
+                
+                
+            Kxxq_modes_sym = Kxxq_modes_sym/Nrots
+            Kyyq_modes_sym = Kyyq_modes_sym/Nrots
+            Kzzq_modes_sym = Kzzq_modes_sym/Nrots
+            Kxyq_modes_sym = Kxyq_modes_sym/Nrots
+            Kyzq_modes_sym = Kyzq_modes_sym/Nrots
+            Kxzq_modes_sym = Kxzq_modes_sym/Nrots
+            
+            #print(Kxxq_modes_sym.shape)       
                      
         
 
-        Kxx_mp.append(Kxxq_modes_sym)
-        Kyy_mp.append(Kyyq_modes_sym)
-        Kzz_mp.append(Kzzq_modes_sym)
-
-        kxx += np.sum(Kxxq_modes_sym)
-        kyy += np.sum(Kyyq_modes_sym)
-        kzz += np.sum(Kzzq_modes_sym)
-        kxy += np.sum(Kxyq_modes_sym)
-        kyz += np.sum(Kyzq_modes_sym)
-        kxz += np.sum(Kxzq_modes_sym)
-
-
-        kxx_ph += np.trace(Kxxq_modes_sym)
-        kyy_ph += np.trace(Kyyq_modes_sym)
-        kzz_ph += np.trace(Kzzq_modes_sym)
-        kxy_ph += np.trace(Kxyq_modes_sym)
-        kyz_ph += np.trace(Kyzq_modes_sym)
-        kxz_ph += np.trace(Kxzq_modes_sym)
-
-    # symmetrize according to point groups.
-    kappa = np.zeros((3,3))
-    kappa[0,0] = kxx
-    kappa[1,1] = kyy
-    kappa[2,2] = kzz
-    kappa[0,1] = kxy
-    kappa[1,0] = kxy
-    kappa[1,2] = kyz
-    kappa[2,1] = kyz
-    kappa[0,2] = kxz
-    kappa[2,0] = kxz
-
-    kappa_ph = np.zeros((3,3))
-    kappa_ph[0,0] = kxx_ph.real
-    kappa_ph[1,1] = kyy_ph.real
-    kappa_ph[2,2] = kzz_ph.real
-    kappa_ph[0,1] = kxy_ph.real
-    kappa_ph[1,0] = kxy_ph.real
-    kappa_ph[1,2] = kyz_ph.real
-    kappa_ph[2,1] = kyz_ph.real
-    kappa_ph[0,2] = kxz_ph.real
-    kappa_ph[2,0] = kxz_ph.real
+            KxxT_mp.append(Kxxq_modes_sym)
+            KyyT_mp.append(Kyyq_modes_sym)
+            KzzT_mp.append(Kzzq_modes_sym)
+    
+            kxx[iT] += np.sum(Kxxq_modes_sym)
+            kyy[iT] += np.sum(Kyyq_modes_sym)
+            kzz[iT] += np.sum(Kzzq_modes_sym)
+            kxy[iT] += np.sum(Kxyq_modes_sym)
+            kyz[iT] += np.sum(Kyzq_modes_sym)
+            kxz[iT] += np.sum(Kxzq_modes_sym)
 
 
-    return kappa,kappa_ph,np.array(Kxx_mp),np.array(Kyy_mp),np.array(Kzz_mp)
+            kxx_ph[iT] += np.trace(Kxxq_modes_sym)
+            kyy_ph[iT] += np.trace(Kyyq_modes_sym)
+            kzz_ph[iT] += np.trace(Kzzq_modes_sym)
+            kxy_ph[iT] += np.trace(Kxyq_modes_sym)
+            kyz_ph[iT] += np.trace(Kyzq_modes_sym)
+            kxz_ph[iT] += np.trace(Kxzq_modes_sym)
+            
+        Kxx_mp.append(np.array(KxxT_mp))
+        Kyy_mp.append(np.array(KyyT_mp))
+        Kzz_mp.append(np.array(KzzT_mp))
+
+   
+
+        kappa[iT,0,0] = kxx[iT]
+        kappa[iT,1,1] = kyy[iT]
+        kappa[iT,2,2] = kzz[iT]
+        kappa[iT,0,1] = kxy[iT]
+        kappa[iT,1,0] = kxy[iT]
+        kappa[iT,1,2] = kyz[iT]
+        kappa[iT,2,1] = kyz[iT]
+        kappa[iT,0,2] = kxz[iT]
+        kappa[iT,2,0] = kxz[iT]
+
+    
+        kappa_ph[iT,0,0] = kxx_ph[iT]
+        kappa_ph[iT,1,1] = kyy_ph[iT]
+        kappa_ph[iT,2,2] = kzz_ph[iT]
+        kappa_ph[iT,0,1] = kxy_ph[iT]
+        kappa_ph[iT,1,0] = kxy_ph[iT]
+        kappa_ph[iT,1,2] = kyz_ph[iT]
+        kappa_ph[iT,2,1] = kyz_ph[iT]
+        kappa_ph[iT,0,2] = kxz_ph[iT]
+        kappa_ph[iT,2,0] = kxz_ph[iT]
+    
+    # For one temperature, Kij_mp[q,s1,s2] is tha pairwise conductivity at q point, between s1 and s2
+    # For multiple temperautres Kij_mp[T,q,s1,s2]
+    
+    
+    if len(Temperatures)==1:
+        return kappa,kappa_ph,Kxx_mp[0],Kyy_mp[0],Kzz_mp[0],freqs,weights
+    
+    if len(Temperatures)>1:
+        return kappa,kappa_ph,np.array(Kxx_mp),np.array(Kyy_mp),np.array(Kzz_mp),freqs
 
 
 def get_dq_dynmat_q(phonon,q,dq=1e-5):
