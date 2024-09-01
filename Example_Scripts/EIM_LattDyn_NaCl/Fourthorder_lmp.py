@@ -124,7 +124,7 @@ if __name__=="__main__":
             os.remove(filename)
             
             lmp = LAMMPSlib(lmpcmds=cmds, log_file='log.'+str(i)+'.'+str(n),lammps_header=lammps_header)
-            scell.set_calculator(lmp)
+            scell.calc = lmp
             force = scell.get_forces()
             forces.append(force[p,:])
             

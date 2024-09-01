@@ -40,7 +40,8 @@ def calc_phipart(i,e,nirred,ntot,p,cmds,sposcar,namepattern,atomtypes='atomic'):
         
         lmp = LAMMPSlib(lmpcmds=cmds, log_file='log.'+str(i),lammps_header=lammps_header)
         #print(lmp)
-        scell.set_calculator(lmp)
+        #scell.set_calculator(lmp)
+        scell.calc = lmp
         force = scell.get_forces()
         os.remove('log.'+str(i))
         phi_i -= (isign * jsign * force[p, :].T) # put the result in a queue object, which will be retrieved by get
@@ -48,7 +49,7 @@ def calc_phipart(i,e,nirred,ntot,p,cmds,sposcar,namepattern,atomtypes='atomic'):
 
 if __name__ == "__main__":
 
-    Nprocesses = 2
+    Nprocesses = 4
     Nrepeat = [3,3,3]
     nneigh = 4 # neighbor cutoff
     cmds = ["pair_style eim","pair_coeff * * Na Cl ffield.eim Na Cl"]

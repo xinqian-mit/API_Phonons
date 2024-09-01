@@ -28,9 +28,9 @@ nacl = crystal(['Na', 'Cl'], [(0, 0, 0), (0.5, 0.5, 0.5)], spacegroup=225,
 nacl = api_ph.aseAtoms_to_phonopyAtoms(nacl)
 phonon = Phonopy(nacl,np.diag(Nrepeat),primitive_matrix=prim)
 phonon.generate_displacements(distance=0.03) # vasp
-Scell0 = api_ph.phonopyAtoms_to_aseAtoms(phonon.get_supercell())
+Scell0 = api_ph.phonopyAtoms_to_aseAtoms(phonon.supercell)
 
-Scells_ph = phonon.get_supercells_with_displacements() # This returns a list of Phononpy atoms object
+Scells_ph = phonon.supercells_with_displacements # This returns a list of Phononpy atoms object
 
 cmds = ["pair_style eim","pair_coeff * * Na Cl ffield.eim Na Cl"]
 
@@ -40,16 +40,16 @@ interface_mode = 'vasp'
 
 
 forces = api_pl.calc_lmp_force_sets(cmds,Scells_ph)
-phonon.set_forces(forces)
-PhonIO.write_FORCE_SETS(phonon.get_displacement_dataset()) # write forces & displacements to FORCE_SET
+phonon.forces = forces
+PhonIO.write_FORCE_SETS(phonon.dataset) # write forces & displacements to FORCE_SET
 force_set=PhonIO.parse_FORCE_SETS() # parse force_sets
-phonon.set_displacement_dataset(force_set) # force_set is a list of forces and displacements
+phonon.dataset = force_set # force_set is a list of forces and displacements
 
 if NAC == True:
     nac_params = PhonIO.get_born_parameters(
             open("BORN"),
-            phonon.get_primitive(),
-            phonon.get_primitive_symmetry())
+            phonon.primitive,
+            phonon.primitive_symmetry)
     if nac_params['factor'] == None:
         physical_units = get_default_physical_units(interface_mode)
         nac_params['factor'] = physical_units['nac_factor']
@@ -58,11 +58,11 @@ if NAC == True:
 
 phonon.produce_force_constants()
 phonon.symmetrize_force_constants()
-api_ph.write_ShengBTE_FC2(phonon.get_force_constants(), filename='FORCE_CONSTANTS_2ND')
+api_ph.write_ShengBTE_FC2(phonon.force_constants, filename='FORCE_CONSTANTS_2ND')
 
 # calc and plot bandstructure
 bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
-phonon.set_band_structure(bands,is_eigenvectors=True,labels=band_labels)
+phonon.run_band_structure(bands,with_eigenvectors=True,labels=band_labels)
 phonon.write_yaml_band_structure()
 bs_plt=phonon.plot_band_structure()
 bs_plt.xlabel("")
