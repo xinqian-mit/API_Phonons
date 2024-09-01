@@ -35,7 +35,7 @@ if os.path.exists('DFSET'):
     DFSET = np.loadtxt('DFSET')
     displacements=DFSET[:,0:3]
     forces=DFSET[:,3:6]
-    Natoms = phonon.get_supercell().get_number_of_atoms()
+    Natoms = phonon.supercell.get_number_of_atoms()
     Nat_scells,DIM = forces.shape
     Nsnaps = int(Nat_scells/Natoms)
     forces=forces.reshape([Nsnaps,Natoms,3])
@@ -46,7 +46,7 @@ else:
 
 FC2=get_fc2(phonon.get_supercell(),phonon.get_primitive(),displacements,forces,log_level=1)
 
-phonon.set_force_constants(FC2)
+phonon.force_constants = FC2
 phonon.symmetrize_force_constants()
 
 
@@ -54,8 +54,8 @@ phonon.symmetrize_force_constants()
 if NAC == True:
     nac_params = PhonIO.get_born_parameters(
             open("BORN"),
-            phonon.get_primitive(),
-            phonon.get_primitive_symmetry())
+            phonon.primitive,
+            phonon.primitive_symmetry)
     if nac_params['factor'] == None:
         physical_units = get_default_physical_units(interface_mode)
         nac_params['factor'] = physical_units['nac_factor']
@@ -64,9 +64,9 @@ if NAC == True:
 
 
 
-api_ph.write_ShengBTE_FC2(phonon.get_force_constants(), filename='FORCE_CONSTANTS_2ND')
+api_ph.write_ShengBTE_FC2(phonon.force_constants, filename='FORCE_CONSTANTS_2ND')
 bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
-phonon.set_band_structure(bands,is_eigenvectors=True,labels=band_labels)
+phonon.run_band_structure(bands,with_eigenvectors=True,labels=band_labels)
 phonon.write_yaml_band_structure()
 bs_plt=phonon.plot_band_structure()
 bs_plt.xlabel("")
