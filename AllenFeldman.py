@@ -7,7 +7,158 @@ import subprocess
 from os import path
 from phonopy.phonon.degeneracy import degenerate_sets
 
-def calc_QHGK_phono3py_at_T(phonon,mesh,Temperatures,load=True,nac=False,lbte=False): # single temperature
+
+def read_ShengBTE_scattRate(SCATTRATE_FILE,phonon):
+    # import and reshape scattering_rate files
+    # phonopy objects are input for reshaping the matrix
+    freqs = phonon.get_mesh_dict()['frequencies']
+    scatt_rate_ph = np.loadtxt(SCATTRATE_FILE)[:,-1]
+    scatt_rate_ph = np.reshape(scatt_rate_ph,freqs.T.shape).T
+    scatt_rate_ph[np.isnan(scatt_rate_ph)] = np.inf
+    
+    return scatt_rate_ph
+
+
+def Tau_modepairs_ShengBTE_q(freqs_THz,Scatt_Rate):
+    
+    """
+    ShengBTE linewidths to compute mode-transition time among mode pairs.
+    """
+    
+    gamma = Scatt_Rate/2.0
+    
+    Ws,Wr = np.meshgrid(freqs_THz*2*np.pi,freqs_THz*2*np.pi)
+    Gs,Gr = np.meshgrid(gamma, gamma) # convert to linewidths.
+    
+    Num = (Gs+Gr)
+    Num[np.isnan(Num)] = 0
+    Den = (Ws-Wr)**2+(Gs+Gr)**2 
+    Den[Den ==0] = np.inf
+    Den[np.isnan(Den)] = np.inf
+    Tau_sr = Num/Den # ps
+    
+    Tau_sr[np.isnan(Tau_sr)] = 0
+    Tau_sr[np.isinf(Tau_sr)] = 0
+    
+
+    return Tau_sr
+
+def calc_QHGK_ShengBTE_at_T(phonon,mesh,scatt_rate_ph,T):
+
+    freqs = phonon.get_mesh_dict()['frequencies']
+    weights = phonon.get_mesh_dict()['weights']
+    qpoints = phonon.get_mesh_dict()['qpoints'] # irreducible wedge
+    
+    unit_to_WmK = (Angstrom*THz)**2 /(Angstrom**3)/THz  # need to check this factor. May have an extra 2pi.
+
+    Vol = phonon.get_primitive().get_volume()
+
+    Nq = len(qpoints) # number of irreducible qpoints.
+    Ns = 3*phonon.get_primitive().get_number_of_atoms() # number of phonon branches.
+
+    C_mp = np.zeros((Nq,Ns,Ns))# specific heat of mode pairs (mp)
+
+    # symmetrize kijq_modes
+    Rot_lists = phonon.get_symmetry().get_symmetry_operations()['rotations']
+    Nrots = len(Rot_lists)
+
+    Kappa_Kubo = np.zeros(6) #Kubo thermal conductivity (xx,yy,zz,xy,yz,zx)
+    Kappa_Ph =np.zeros(6) # quasiparticle picture of phonon gas.
+    
+    # Here I explictly show how to compute thermal conductivity using Kubo Formula.
+    
+    Kxx_mp = []
+    Kyy_mp = []
+    Kzz_mp = []
+
+    for iq,q in enumerate(qpoints):
+        weight_q = weights[iq]
+        q = qpoints[iq]
+        C_mp_q = calc_Cv_modepairs_q(np.abs(freqs[iq]),T)/Vol/np.prod(mesh) # specific heat mode pairs at a q point. 
+        C_mp[iq] = C_mp_q*weight_q
+
+        gvm_q = get_velmat_modepairs_q(phonon,q) # group velocity operator at q.
+
+        gvm_by_gvm_q = get_velmat_by_velmat_q(gvm_q,phonon,q)
+
+        Tau_mp_q = Tau_modepairs_ShengBTE_q(freqs[iq],scatt_rate_ph[iq])
+
+        Kxxq_modes = np.real(C_mp_q*gvm_by_gvm_q[0]*Tau_mp_q)*weight_q*unit_to_WmK
+        Kyyq_modes = np.real(C_mp_q*gvm_by_gvm_q[1]*Tau_mp_q)*weight_q*unit_to_WmK
+        Kzzq_modes = np.real(C_mp_q*gvm_by_gvm_q[2]*Tau_mp_q)*weight_q*unit_to_WmK
+        Kxyq_modes = np.real(C_mp_q*gvm_by_gvm_q[3]*Tau_mp_q)*weight_q*unit_to_WmK
+        Kyzq_modes = np.real(C_mp_q*gvm_by_gvm_q[4]*Tau_mp_q)*weight_q*unit_to_WmK
+        Kxzq_modes = np.real(C_mp_q*gvm_by_gvm_q[5]*Tau_mp_q)*weight_q*unit_to_WmK
+
+
+        Kxxq_modes_sym = np.zeros_like(Kxxq_modes)
+        Kyyq_modes_sym = np.zeros_like(Kyyq_modes)
+        Kzzq_modes_sym = np.zeros_like(Kzzq_modes)
+        Kxyq_modes_sym = np.zeros_like(Kxyq_modes)
+        Kyzq_modes_sym = np.zeros_like(Kyzq_modes)
+        Kxzq_modes_sym = np.zeros_like(Kxzq_modes)
+        for rot in Rot_lists:
+            invrot = np.linalg.inv(rot)
+
+            RK_xx = rot[0,0]*Kxxq_modes + rot[0,1]*Kxyq_modes + rot[0,2]*Kxzq_modes # xx*xx xy*yx xz*zx
+            RK_xy = rot[0,0]*Kxyq_modes + rot[0,1]*Kyyq_modes + rot[0,2]*Kyzq_modes # xx*xy xy*yy xz*zy
+            RK_xz = rot[0,0]*Kxzq_modes + rot[0,1]*Kyzq_modes + rot[0,2]*Kzzq_modes # xx*xz xy*yz xz*zz
+            RK_yx = rot[1,0]*Kxxq_modes + rot[1,1]*Kxyq_modes + rot[1,2]*Kxzq_modes # yx*xx yy*yx yz*zx
+            RK_yy = rot[1,0]*Kxyq_modes + rot[1,1]*Kyyq_modes + rot[1,2]*Kyzq_modes # yx*xy yy*yy yz*zy
+            RK_yz = rot[1,0]*Kxzq_modes + rot[1,1]*Kyzq_modes + rot[1,2]*Kzzq_modes # yx*xz yy*yz yz*zz        
+            RK_zx = rot[2,0]*Kxxq_modes + rot[2,1]*Kxyq_modes + rot[2,2]*Kxzq_modes # yx*xx yy*yx yz*zx
+            RK_zy = rot[2,0]*Kxyq_modes + rot[2,1]*Kyyq_modes + rot[2,2]*Kyzq_modes # yx*xy yy*yy yz*zy
+            RK_zz = rot[2,0]*Kxzq_modes + rot[2,1]*Kyzq_modes + rot[2,2]*Kzzq_modes # yx*xz yy*yz yz*zz     
+
+            R_K_invR_xx = RK_xx*invrot[0,0] + RK_xy*invrot[1,0] + RK_xz*invrot[2,0]
+            R_K_invR_xy = RK_xx*invrot[0,1] + RK_xy*invrot[1,1] + RK_xz*invrot[2,1]
+            R_K_invR_xz = RK_xx*invrot[0,2] + RK_xy*invrot[1,2] + RK_xz*invrot[2,2]
+            R_K_invR_yx = RK_yx*invrot[0,0] + RK_yy*invrot[1,0] + RK_yz*invrot[2,0]
+            R_K_invR_yy = RK_yx*invrot[0,1] + RK_yy*invrot[1,1] + RK_yz*invrot[2,1]
+            R_K_invR_yz = RK_yx*invrot[0,2] + RK_yy*invrot[1,2] + RK_yz*invrot[2,2]
+            R_K_invR_zx = RK_zx*invrot[0,0] + RK_zy*invrot[1,0] + RK_zz*invrot[2,0]
+            R_K_invR_zy = RK_zx*invrot[0,1] + RK_zy*invrot[1,1] + RK_zz*invrot[2,1]
+            R_K_invR_zz = RK_zx*invrot[0,2] + RK_zy*invrot[1,2] + RK_zz*invrot[2,2]
+
+            Kxxq_modes_sym += R_K_invR_xx
+            Kyyq_modes_sym += R_K_invR_yy
+            Kzzq_modes_sym += R_K_invR_zz
+            Kxyq_modes_sym += (R_K_invR_xy + R_K_invR_yx)/2
+            Kyzq_modes_sym += (R_K_invR_yz + R_K_invR_zy)/2
+            Kxzq_modes_sym += (R_K_invR_xz + R_K_invR_zx)/2
+
+
+        Kxxq_modes = Kxxq_modes_sym/Nrots
+        Kyyq_modes = Kyyq_modes_sym/Nrots
+        Kzzq_modes = Kzzq_modes_sym/Nrots
+        Kxyq_modes = Kxyq_modes_sym/Nrots
+        Kyzq_modes = Kyzq_modes_sym/Nrots
+        Kxzq_modes = Kxzq_modes_sym/Nrots
+        
+        Kxx_mp.append(Kxxq_modes)
+        Kyy_mp.append(Kyyq_modes)
+        Kzz_mp.append(Kzzq_modes)
+
+        Kappa_Kubo[0] += np.sum(Kxxq_modes)
+        Kappa_Kubo[1] += np.sum(Kyyq_modes)
+        Kappa_Kubo[2] += np.sum(Kzzq_modes)
+        Kappa_Kubo[3] += np.sum(Kxyq_modes)
+        Kappa_Kubo[4] += np.sum(Kyzq_modes)
+        Kappa_Kubo[5] += np.sum(Kxzq_modes)
+
+        Kappa_Ph[0] += np.trace(Kxxq_modes) # diagonal part corresponds to quasi-particles
+        Kappa_Ph[1] += np.trace(Kyyq_modes)
+        Kappa_Ph[2] += np.trace(Kzzq_modes)
+        Kappa_Ph[3] += np.trace(Kxyq_modes)
+        Kappa_Ph[4] += np.trace(Kyzq_modes)
+        Kappa_Ph[5] += np.trace(Kxzq_modes)
+        
+    return Kappa_Kubo,Kappa_Ph,np.array(Kxx_mp),np.array(Kyy_mp),np.array(Kzz_mp),freqs
+
+
+
+
+def calc_QHGK_phono3py(phonon,mesh,Temperatures,load=True,nac=False,lbte=False): # single temperature
     Nrepeat = phonon.get_supercell_matrix().diagonal()
     
     
