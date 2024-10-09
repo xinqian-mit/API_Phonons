@@ -289,7 +289,6 @@ def get_velmat_by_velmat_q(gvm,phonon,q):
             
         gvm_by_gvm[idir] /= multi # symmetrize gvm_by_gvm
         
-        
     return gvm_by_gvm
         
 
@@ -314,7 +313,8 @@ def get_velmat_modepairs_q(phonon, q, factor=VaspToTHz,cutoff_frequency=1e-4): #
         
         gvm = np.array([vx_modepairs,vy_modepairs,vz_modepairs])
         
-        return gvm
+        
+        return np.real(gvm)
     
     else:
     
