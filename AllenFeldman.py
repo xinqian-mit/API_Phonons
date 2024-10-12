@@ -158,7 +158,7 @@ def calc_QHGK_ShengBTE_at_T(phonon,mesh,scatt_rate_ph,T):
 
 
 
-def calc_QHGK_phono3py(phonon,mesh,Temperatures,load=True,nac=False,lbte=False): # single temperature
+def calc_QHGK_phono3py(phonon,mesh,Temperatures,load=True,nac=False,lbte=False): # multiple temperatures
     Nrepeat = phonon.get_supercell_matrix().diagonal()
     
     
