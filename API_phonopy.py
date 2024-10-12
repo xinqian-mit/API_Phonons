@@ -176,6 +176,9 @@ def write_unitcell_eigvecs_qmesh_gulp(filename,eigvecs,phonon_scell):
 def write_xyz_aseAtomsList(AtomsList,filename):
     for at in AtomsList:
         ase.io.write(filename,at,format='xyz',append=True)
+        
+
+
 
 @njit        
 def Bose_factor(T,freq_THz):
@@ -184,8 +187,10 @@ def Bose_factor(T,freq_THz):
     if freq_THz <0:
         freq_THz = np.amax(np.array([1.0e-6,np.abs(freq_THz)])) # the absolute value is to consider imaginary (negative) modes.
     
-    exp_factor=np.exp(Units.Hbar*freq_THz*2.0*np.pi*1.0e12/(Units.Kb*T))
-    n=1./(exp_factor-1.0)
+    freqs = freq_THz*THzToEv
+    x = freqs / Kb / T
+    #exp_factor=np.exp(Units.Hbar*freq_THz*2.0*np.pi*1.0e12/(Units.Kb*T))
+    n=1./(np.exp(x)-1.0)
     return n
 
 def mode_cv(temp, freqsTHz):  # freqs (eV)
@@ -240,7 +245,7 @@ def thermo_disp_along_eig(phonon_scell,T,Nsnapshots,if_classic=False):
         for s,eps_s in enumerate(Eps_array): # eps_s is the eigvecs of mode s
             freq_THz = frequencies[s]
              # get rid of the translation modes that diverges...
-            if s>2:
+            if freq_THz>1e-3: # abandon zero freq. modes at Gamma point.
                 for i,eps_si in enumerate(eps_s): # eps_si is the eigvec on atom i of the mode s
                     mass = masses[i]
                     #(i)
@@ -496,11 +501,14 @@ def write_Supercells_VASP(Supercells,directory='./',prefix='POSCAR'):
             
             
             
-def write_2D_array(filename,data_2d):
+def write_2D_array(filename,data_2d,headerline='#'):
     fid=open(filename,'w')
-    dim,N = np.shape(data_2d)
-    for i in range(N):
-        fid.write('{:6f}  {:6f}\n'.format(data_2d[0][i],data_2d[1][i]))
+    Ncols,Nrows = np.shape(data_2d)
+    fid.write(headerline +'\n')
+    for i in range(Nrows):
+        for j in range(Ncols):
+            fid.write('{:6f}   '.format(data_2d[j,i]))
+        fid.write('\n')
     fid.close()
 
 def write_ShengBTE_FC2(force_constants,
