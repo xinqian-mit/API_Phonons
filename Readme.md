@@ -107,9 +107,6 @@ The file RandDisps_SelfConsist_FC2_FC3.py and RandDisps_SelfConsit_FC2_GAP_ALM.p
 and thirdorder force constants. I first use the finite displacement method, and obtain the first generation of eigenvectors. Then I used 
 the new set of FC2, FC3, eigenvectors to generate snapshots. This process is iterated. Convergence can usually be achieved after ~ 5 iterations.  
 
-#### Generate_nacl_subnmGap:  
-A simple example of how to generate an inteface or gap using ase package.  
-
 #### RDF:  
 A simple example of how to compute radial distribution function g(r).  
 
