@@ -69,18 +69,22 @@ Codes and scripts for computing spectral energy density from MD trajectories. Se
 In the folder Example_Scripts/, I provide several example files on how to use this package for phonon simulations:<br />
 
 #### Dielectric_function_NaCl:  
-I provided a soap based machine learning potential for NaCl. With the LD_quipGap_phonopy_NAC.py computes the 
+
+
+#### Dispersion_Zr_hcp_gap:  
+This is a fairly simple example for computing phonon dispersion of hcp-phase of Zr.  
+
+I provided a soap based machine learning potential for hcp-Zr. With the LD_quipGap_phonopy_NAC.py computes the 
 harmonic force constants (FC2), while thirorder_gap.py computes third order anharmonic force constants (FC3). The 
-usage of thirdorder_gap.py is the same as thirdorder_vasp.py for ShengBTE, execute with:  
-```
-python3 thirdorder_gap.py [na] [nb] [nc] [cutoff(nm)]|-[n] GAP_potential_file <br />
-```
-where the parameters in [] need to be specified. Parameters named na nb and nc are the supercell dimensions, followed by cutoff radius or -n where -n is the number of nearest
-neighbors. There are also parallelized scripts for fc3 calculation such as thirdorder_gap_mp.py, compute using:  
+usage of thirdorder_gap_mp.py is the same as thirdorder_vasp.py for ShengBTE, execute with:  
+
 
 ```
 python3 thirdorder_gap_mp.py [na] [nb] [nc] [cutoff(nm)]|-[n] [Nprocesses] [GAP_potential_file]
 ```
+
+where the parameters in [] need to be specified. Parameters named na nb and nc are the supercell dimensions, followed by cutoff radius or -n where -n is the number of nearest
+neighbors.
 
 Similarly, fourthorder force constants can also be extracted using:
 
@@ -90,8 +94,7 @@ python3 fourthorder_gap_mp.py [na] [nb] [nc] [cutoff(nm)]|-[n] [Nprocesses] [GAP
 The jupyter notebook script then computes the dielectric function.  
 for perturbated snapshots.   
 
-#### Dispersion_Zr_hcp_gap:  
-This is a fairly simple example for computing phonon dispersion of hcp-phase of Zr.  
+
 
 
 #### Tdep_bccZr: 
