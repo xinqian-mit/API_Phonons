@@ -59,9 +59,6 @@ make foo mode=shared
 Then add lammps to the envoronment variable PYTHONPATH.
 
 
-## NMA_sed
-Codes and scripts for computing spectral energy density from MD trajectories. See the readme.md in the folder for further details.
-
 ## Example Scripts
 
 In the folder Example_Scripts/, I provide several example files on how to use this package for phonon simulations:<br />
