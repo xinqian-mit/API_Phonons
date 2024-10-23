@@ -39,7 +39,7 @@ Band_points=51 # points on each BZ-path segments
 NAC = False # non-analytic correction for polar solids
 interface_mode = 'vasp' # interface mode. use vasp.
 
-Unit_cell = Intf_vasp.read_vasp("POSCAR") # read prim cell from the POSCAR file
+Unit_cell = Intf_vasp.read_vasp("POSCAR_relx") # read prim cell from the POSCAR file
 prim_mat = np.eye(3)#[[0, 0.5, 0.5],[0.5, 0, 0.5],[0.5, 0.5, 0]]
 
 

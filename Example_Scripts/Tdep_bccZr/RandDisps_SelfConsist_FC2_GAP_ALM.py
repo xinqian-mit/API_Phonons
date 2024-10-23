@@ -21,17 +21,16 @@ Temperatures= [300]#[10,50,100,150,200,300]
 NSnaps = 50
 Niter = 3 # number of iterations
 if_write_iter = False
-gp_xml_file= "../Dielectric_function_NaCl/soap_n12l11_6.0cut_coul/gp_NaCl_soap_coul.xml"
-Qpoints=np.array([[0.0001,0.0001,1.0],[0.5,0.5,1.0],[3./8,3./8,3./4],[0.0,0.0,0.0],[0.5,0.5,0.5]])
-band_labels=['$\Gamma$','X','K','$\Gamma$','L']
-#Qpoints = np.array([[0.5,0.0,0.0],[0,0,0],[2./3,1./3,0.0]])
-#band_labels = ['M','$\Gamma$','K']
+gp_xml_file= "gp_bcc.xml"
+Qpoints=np.array([[0.,0.,0.],[-0.5,0.5,0.5],[1./4,1./4,1./4],[0.0,0.0,0.0],[0.0,0.5,0.0]])
+band_labels=['$\Gamma$','H','P','$\Gamma$','N']
+
 Ncells=[4,4,4]
 Band_points=51
-NAC = True
+NAC = False
 interface_mode = 'vasp'
 
-Unit_cell = Intf_vasp.read_vasp("POSCAR") # read prim cell from the POSCAR file
+Unit_cell = Intf_vasp.read_vasp("POSCAR_relx") # read prim cell from the POSCAR file
 prim_mat = np.eye(3)#[[0, 0.5, 0.5],[0.5, 0, 0.5],[0.5, 0.5, 0]]
 
 
@@ -88,7 +87,7 @@ for Temperature in Temperatures:
         u_disps = api_ph.thermo_disp_along_eig(phonon_scell,Temperature,NSnaps)
         Scell_snaps = [];
         Supercell = phonon_scell.get_supercell()
-        Intf_vasp.write_vasp("SPOSCAR_NaCl",Supercell)
+        Intf_vasp.write_vasp("SPOSCAR",Supercell)
         pos0 = Supercell.get_positions()
         
         snaps_ase=[]
@@ -134,14 +133,14 @@ for Temperature in Temperatures:
             bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
             phonon.set_band_structure(bands,labels=band_labels)
             bs_plt=phonon.plot_band_structure()
-            phonon.write_yaml_band_structure(filename='NaCl_disp_'+str(Temperature)+'K_iter'+str(icalc+1)+'.yaml')
+            phonon.write_yaml_band_structure(filename='PhBands_'+str(Temperature)+'K_iter'+str(icalc+1)+'.yaml')
 
     
     PhonIO.write_FORCE_CONSTANTS(phonon.get_force_constants(), filename='FORCE_CONSTANTS_'+str(Temperature)+'K')
     bands=api_ph.qpoints_Band_paths(Qpoints,Band_points)
     phonon.set_band_structure(bands,labels=band_labels)
     bs_plt=phonon.plot_band_structure()
-    phonon.write_yaml_band_structure(filename='NaCl_disp_'+str(Temperature)+'K.yaml')
+    phonon.write_yaml_band_structure(filename='PhBands_'+str(Temperature)+'K.yaml')
 
 
 

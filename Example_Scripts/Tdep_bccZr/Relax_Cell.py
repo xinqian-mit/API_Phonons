@@ -22,7 +22,7 @@ fmax = 1e-6
 pot = quippy.potential.Potential(param_filename=gp_xml_file)
 
 
-ucell = Intf_vasp.read_vasp('POSCAR_mp')
+ucell = Intf_vasp.read_vasp('POSCAR')
 ucell_ase = api_ph.phonopyAtoms_to_aseAtoms(ucell)
 ucell_ase.set_calculator(pot) # ase can accept quippy potential object as calculators
 ucell_ase.set_constraint(FixAtoms(mask=[True for atom in ucell_ase]))
@@ -31,7 +31,7 @@ relax = BFGS(ucf)
 
 relax.run(fmax=fmax)
 ucell_ph = api_ph.aseAtoms_to_phonopyAtoms(ucell_ase)
-Intf_vasp.write_vasp('POSCAR',ucell_ph)
+Intf_vasp.write_vasp('POSCAR_relx',ucell_ph)
 
 
 # In[ ]:
