@@ -17,8 +17,8 @@ import quippy
 
 fmax = 1e-6
 
-in_data_file = 'POSCAR_1000'
-relx_data_file = 'POSCAR_1000_SWrelx'
+in_data_file = 'POSCAR_512'
+relx_data_file = 'POSCAR_512_SWrelx'
 
 pot_file ='Si.sw'
 lammps_header = [
