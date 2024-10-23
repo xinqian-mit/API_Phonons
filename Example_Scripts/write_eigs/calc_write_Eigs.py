@@ -2,28 +2,35 @@ import numpy as np
 from phonopy.structure.atoms import PhonopyAtoms
 from phonopy import Phonopy
 import phonopy.file_IO as PhonIO
-import phonopy.interface.vasp as Intf_vasp
-import API_quippy as api_q
+from phonopy.interface.vasp import read_vasp
 import API_phonopy as api_ph
+import API_phonopy_lammps as api_pl
 from phonopy.interface.calculator import get_default_physical_units
 
 
-gp_xml_file='../Dielectric_function_NaCl/soap_n12l11_6.0cut_coul/gp_NaCl_soap_coul.xml'
-Prim_cell = Intf_vasp.read_vasp("POSCAR")
+
+Prim_cell = read_vasp("POSCAR")
 Ncells=[4,4,4]
+
+# set up lammps potential, this is the same as lammps scripts
+lmp_cmds = ["pair_style eim","pair_coeff * * Na Cl ffield.eim Na Cl"]
+
 Eigfile = "NaCl-qmesh"+str(Ncells[0])+ "x" + str(Ncells[1]) +"x"+ str(Ncells[2])+"-irred.eig"
 NAC=True
 phonon_scell = Phonopy(Prim_cell,np.diag(Ncells)) 
 phonon_scell.generate_displacements(distance=0.03) # vasp
-Scells_phonopy = phonon_scell.get_supercells_with_displacements() # This returns a list of Phononpy atoms object
-Scells_qp = []
-for scell in Scells_phonopy:
-    Scells_qp.append(api_ph.phonopyAtoms_to_aseAtoms(scell))
+Scells_phonopy = phonon_scell.get_supercells_with_displacements() # This returns a list of Phononpy atoms object of supercells with displacements
 
-force_gap_scells = api_q.calc_force_sets_GAP(gp_xml_file,Scells_qp)
+# convert phonopy supercells to ase atom objs.
+Scells_ph = []
+for scell in Scells_phonopy:
+    Scells_ph.append(api_ph.phonopyAtoms_to_aseAtoms(scell))
+
+# compute forces using lammps python interface
+forces = api_pl.calc_lmp_force_sets(lmp_cmds,Scells_ph)
 
 #parse force set and calc force constants
-phonon_scell.set_forces(force_gap_scells)
+phonon_scell.set_forces(forces)
 PhonIO.write_FORCE_SETS(phonon_scell.get_displacement_dataset()) # write forces & displacements to FORCE_SET
 force_set=PhonIO.parse_FORCE_SETS() # parse force_sets
 phonon_scell.set_displacement_dataset(force_set) # force_set is a list of forces and displacements
