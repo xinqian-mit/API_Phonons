@@ -17,22 +17,22 @@ import copy as cp
 
 
 # specify potential here
-gp_xml_file= "../Dielectric_function_NaCl/soap_n12l11_6.0cut_coul/gp_NaCl_soap_coul.xml"
+gp_xml_file="../Dispersion_Zr_hcp_gap/gp_new_DB2-4.xml"
 
 # perform a Gamma point LD on the cell specified by POSCAR
 Qpoints=np.array([[0.0,0.0,0.0]])
-Ncells=[3,3,3]
+Ncells=[3,3,2]
 qmesh=[1,1,1]
 Band_points=1
 interface_mode = 'vasp'
 NSnaps = 50
 Temperature = 300
-directory = 'NaCl_Thermo_Disps_T'+str(Temperature)
-Snap_file = 'NaCl_Thermo_Disps_T'+str(Temperature)+'.xyz'
+directory = 'Zr_hcp_Thermo_Disps_T'+str(Temperature)
+Snap_file = 'Zr_hcp_Thermo_Disps_T'+str(Temperature)+'.xyz'
 
 
 # generate displacements
-Unit_cell = Intf_vasp.read_vasp("POSCAR_NaCl") # read prim cell from the POSCAR file
+Unit_cell = Intf_vasp.read_vasp("POSCAR_Zr") # read prim cell from the POSCAR file
 prim_mat = [[1,0,0],[0,1,0],[0,0,1]] #[[0, 0.5, 0.5],[0.5, 0, 0.5],[0.5, 0.5, 0]]
 phonon_scell = Phonopy(Unit_cell,np.diag(Ncells),primitive_matrix=prim_mat) # generate an phononpy object for LD calc.
 phonon_scell.generate_displacements(distance=0.01) # vasp
@@ -47,6 +47,7 @@ for scell in Scells_phonopy:
 # calculate forces and convert to phonopy force_sets
 #force_quip_scells = api_q.calc_force_sets_quip(pot_flag,param_str,Scells_quippy)
 force_quip_scells = api_q.calc_force_sets_GAP(gp_xml_file,Scells_quippy)
+
 
 #parse force set and calc force constants
 phonon_scell.set_forces(force_quip_scells)
@@ -71,7 +72,7 @@ eigvecs=api_ph.get_reshaped_eigvecs(phonon_scell)
 u_disps = api_ph.thermo_disp_along_eig(phonon_scell,Temperature,NSnaps)
 Scell_snaps = [];
 Supercell = phonon_scell.get_supercell()
-Intf_vasp.write_vasp("SPOSCAR_NaCl",Supercell)
+Intf_vasp.write_vasp("SPOSCAR_Zr",Supercell)
 pos0 = Supercell.get_positions()
 
 snaps_ase=[]
