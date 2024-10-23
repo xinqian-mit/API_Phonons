@@ -109,6 +109,9 @@ An example of computing amorphous silicon thermal conductivity using Allen-Feldm
 #### EIM_AnHar_QHGK_NaCl:  
 Compute the thermal conductivity of EIM NaCl using quasi-harmonic Kubo relations from quantum mechanical linear response theories. Phono3py is used to compute phonon linewidths. The velocity matrix operators are computed the same way in the Allen-Feldman model.
 
+#### QHGK_BTE_CsPbBr:
+Compute thermal conductivity using quasi-harmonic Kubo formalism, with both the diagonal (phonon quasiparticles) and the off-diagonal (inter-band coherent tunneling) contributions. We have used orthorombic CsPbBr3 as an example. 
+
 #### EIM_LattDyn_NaCl:
 This gives example how we can interface lammps and phonopy to perform lattice dynamics based on the EIM potential supported
 by lammps. Thirdorder.py and Fourthorder.py are implemented with lammps code for computing FC3 and FC4.
