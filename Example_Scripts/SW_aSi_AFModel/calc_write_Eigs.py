@@ -35,7 +35,7 @@ force_gap_scells = []
 for scell in Scells_phonopy:
     scell_ase = api_ph.phonopyAtoms_to_aseAtoms(scell)
     lmp = LAMMPSlib(lmpcmds=cmds, log_file='log.lammps',lammps_header=lammps_header)
-    scell_ase.set_calculator(lmp)
+    scell_ase.calc = lmp
     force = scell_ase.get_forces().tolist()
     force_gap_scells.append(force)
 
