@@ -116,8 +116,12 @@ Compute thermal conductivity using quasi-harmonic Kubo formalism, with both the 
 This gives example how we can interface lammps and phonopy to perform lattice dynamics based on the EIM potential supported
 by lammps. Thirdorder.py and Fourthorder.py are implemented with lammps code for computing FC3 and FC4.
 
+### SecSound_TTG:
+This example shows how to compute TTG signals using the analytical Green's function (GF) of BTE with Callaway's scattering approximation (CSA). The GF-CSA approaches can capture the hydrodynamic lattice cooling effect.
+
+
 #### SnapsDFT_FCs_ALM:  
-This example uses Alamode to compute force constants, based on DFT data of energy and forces of random snapshots assuming a Gaussian-like vibration around the equilibrium position. 
+This example calls Alamode to compute force constants, based on DFT data of energy and forces of random snapshots assuming a Gaussian-like vibration around the equilibrium position. 
 The random snapshots are generated based on this paper: Phys. Rev. B 95, 014302, 2017 by Olle Hellman.   
 
 #### Thermo_Disps_DFT and Thermo_Disps_Pot:  

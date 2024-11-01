@@ -844,34 +844,31 @@ def X1Diso_modes_at_q(XIx,OMEGA,Fs_at_q,taus_at_q,r_directs=(0,1),Xdtype='comple
     ir2 = r_directs[1]
     #iz = rz_directs[2]
     
-    Xmodes_cyln_q = np.zeros((Ns,Nr,Nw),dtype=Xdtype)
-    Xqmodes_cyln_q = np.zeros((Ns,Nr,Nw),dtype=Xdtype)    
+    Xmodes_iso_q = np.zeros((Ns,Nr,Nw),dtype=Xdtype)
+    Xqmodes_iso_q = np.zeros((Ns,Nr,Nw),dtype=Xdtype)    
     
     for s in range(Ns):
         F = Fs_at_q[:,s]
         
-        Fx = np.sqrt(0.5*F[ir1]*F[ir1]+0.5*F[ir2]*F[ir2]) # symmetrize to x axis.  
-        # Fx = np.sqrt(F[ir1]*F[ir1]+F[ir2]*F[ir2])
-        
-        # Fx = F[ir1]
+        Fx1 =  F[ir1] 
+        Fx2 =  F[ir2]
+        Fr = np.sqrt(Fx1**2+Fx2**2)
         
         Wt = OMEGA*taus_at_q[s]
         a = (1+1j*Wt)
-        b = Fx*XIx
-        
-        Den = np.sqrt(a**2+b**2)
-
-        # Xq_s = -1j/np.pi*np.log(1+2*b/a**2*(b+Den))/Den  # equivalent to the arctanh formula.
-        Xs = 1/Den
-        Xq_s =-2j/np.pi*np.arctanh(b/Den)/Den
+        b = Fr*XIx
+    
+        Xs = 1/np.sqrt(a**2+b**2)
+ 
+        Xq_s =-2j/np.pi*np.arctanh(b/np.sqrt(a**2+b**2))/np.sqrt(a**2+b**2)
         
         Xs[np.isnan(Xs)] = 1.0
         Xq_s[np.isnan(Xq_s)] = 0.0
 
-        Xmodes_cyln_q[s] = Xs
-        Xqmodes_cyln_q[s] =  Xq_s
+        Xmodes_iso_q[s] = Xs
+        Xqmodes_iso_q[s] =  Xq_s
         
-    return Xmodes_cyln_q,Xqmodes_cyln_q
+    return Xmodes_iso_q,Xqmodes_iso_q
 
 
 def X2Dxy_modes_at_q(XIx,XIy,OMEGA,Fs_at_q,taus_at_q,xy_directs=(0,1),Xdtype='complex64'):
@@ -886,7 +883,7 @@ def X2Dxy_modes_at_q(XIx,XIy,OMEGA,Fs_at_q,taus_at_q,xy_directs=(0,1),Xdtype='co
     
     ir1 = xy_directs[0]
     ir2 = xy_directs[1]
-    #iz = rz_directs[2]
+
     
     Xmodes_q = np.zeros((Ns,Nx,Ny,Nw),dtype=Xdtype)
     Xqmodes_q = np.zeros((Ns,Nx,Ny,Nw),dtype=Xdtype)    
@@ -940,7 +937,7 @@ def X2Dxz_modes_at_q(XIx,XIz,OMEGA,Fs_at_q,taus_at_q,xz_directs=(0,2),Xdtype='co
     for s in range(Ns):
         F = Fs_at_q[:,s]
         FXi = F[ix]*XIx+F[iz]*XIz  
-        #FXim = F[ix]*XIx-F[iz]*XIz
+
         Wt = OMEGA*taus_at_q[s]
         
         Xs = 1/(1+1j*Wt+1j*FXi)
@@ -1118,6 +1115,7 @@ def Solve1D_TempRN_udrift(XIx,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_tauN_qs,Ve
         cs_at_q = Vec_cqs[iq*Ns:(iq+1)*Ns]
         
         taus_at_q = Vec_tau_qs[iq*Ns:(iq+1)*Ns]
+        
         Fs_at_q = Vec_Fsc_qs[:,iq*Ns:(iq+1)*Ns]
         omegas_at_q = Vec_freqs[iq*Ns:(iq+1)*Ns]*2*np.pi+eps
         ns_at_q = Qs_at_q/omegas_at_q # phonon number generation rate. 
