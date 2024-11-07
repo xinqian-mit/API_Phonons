@@ -40,10 +40,15 @@ def Tau_modepairs_ShengBTE_q(freqs_THz,Scatt_Rate):
     Tau_sr[np.isnan(Tau_sr)] = 0
     Tau_sr[np.isinf(Tau_sr)] = 0
     
+    Tau_sr_offdiag = Tau_sr-np.diag(Tau_sr)
+    Tau_sr = 1/Scatt_Rate + Tau_sr_offdiag
+    
+    Tau_sr[Tau_sr > 1e9] = 0.0 
+    # some degeneracy points at Gamma might have very large lifetime. 
 
     return Tau_sr
 
-def calc_QHGK_ShengBTE_at_T(phonon,mesh,scatt_rate_ph,T):
+def calc_QHGK_ShengBTE_at_T(phonon,mesh,scatt_rate_ph,T,symmetrize_kmp=False):
 
     freqs = phonon.get_mesh_dict()['frequencies']
     weights = phonon.get_mesh_dict()['weights']
@@ -75,7 +80,7 @@ def calc_QHGK_ShengBTE_at_T(phonon,mesh,scatt_rate_ph,T):
         weight_q = weights[iq]
         q = qpoints[iq]
         C_mp_q = calc_Cv_modepairs_q(np.abs(freqs[iq]),T)/Vol/np.prod(mesh) # specific heat mode pairs at a q point. 
-        C_mp[iq] = C_mp_q*weight_q
+        C_mp[iq] = C_mp_q*weight_q # _mp denotes mode pairs
 
         gvm_q = get_velmat_modepairs_q(phonon,q) # group velocity operator at q.
 
@@ -89,51 +94,52 @@ def calc_QHGK_ShengBTE_at_T(phonon,mesh,scatt_rate_ph,T):
         Kxyq_modes = np.real(C_mp_q*gvm_by_gvm_q[3]*Tau_mp_q)*weight_q*unit_to_WmK
         Kyzq_modes = np.real(C_mp_q*gvm_by_gvm_q[4]*Tau_mp_q)*weight_q*unit_to_WmK
         Kxzq_modes = np.real(C_mp_q*gvm_by_gvm_q[5]*Tau_mp_q)*weight_q*unit_to_WmK
+        
+        
+        if symmetrize_kmp:
 
+            Kxxq_modes_sym = np.zeros_like(Kxxq_modes)
+            Kyyq_modes_sym = np.zeros_like(Kyyq_modes)
+            Kzzq_modes_sym = np.zeros_like(Kzzq_modes)
+            Kxyq_modes_sym = np.zeros_like(Kxyq_modes)
+            Kyzq_modes_sym = np.zeros_like(Kyzq_modes)
+            Kxzq_modes_sym = np.zeros_like(Kxzq_modes)
+            for rot in Rot_lists:
+                invrot = np.linalg.inv(rot)
+    
+                RK_xx = rot[0,0]*Kxxq_modes + rot[0,1]*Kxyq_modes + rot[0,2]*Kxzq_modes # xx*xx xy*yx xz*zx
+                RK_xy = rot[0,0]*Kxyq_modes + rot[0,1]*Kyyq_modes + rot[0,2]*Kyzq_modes # xx*xy xy*yy xz*zy
+                RK_xz = rot[0,0]*Kxzq_modes + rot[0,1]*Kyzq_modes + rot[0,2]*Kzzq_modes # xx*xz xy*yz xz*zz
+                RK_yx = rot[1,0]*Kxxq_modes + rot[1,1]*Kxyq_modes + rot[1,2]*Kxzq_modes # yx*xx yy*yx yz*zx
+                RK_yy = rot[1,0]*Kxyq_modes + rot[1,1]*Kyyq_modes + rot[1,2]*Kyzq_modes # yx*xy yy*yy yz*zy
+                RK_yz = rot[1,0]*Kxzq_modes + rot[1,1]*Kyzq_modes + rot[1,2]*Kzzq_modes # yx*xz yy*yz yz*zz        
+                RK_zx = rot[2,0]*Kxxq_modes + rot[2,1]*Kxyq_modes + rot[2,2]*Kxzq_modes # yx*xx yy*yx yz*zx
+                RK_zy = rot[2,0]*Kxyq_modes + rot[2,1]*Kyyq_modes + rot[2,2]*Kyzq_modes # yx*xy yy*yy yz*zy
+                RK_zz = rot[2,0]*Kxzq_modes + rot[2,1]*Kyzq_modes + rot[2,2]*Kzzq_modes # yx*xz yy*yz yz*zz     
+    
+                R_K_invR_xx = RK_xx*invrot[0,0] + RK_xy*invrot[1,0] + RK_xz*invrot[2,0]
+                R_K_invR_xy = RK_xx*invrot[0,1] + RK_xy*invrot[1,1] + RK_xz*invrot[2,1]
+                R_K_invR_xz = RK_xx*invrot[0,2] + RK_xy*invrot[1,2] + RK_xz*invrot[2,2]
+                R_K_invR_yx = RK_yx*invrot[0,0] + RK_yy*invrot[1,0] + RK_yz*invrot[2,0]
+                R_K_invR_yy = RK_yx*invrot[0,1] + RK_yy*invrot[1,1] + RK_yz*invrot[2,1]
+                R_K_invR_yz = RK_yx*invrot[0,2] + RK_yy*invrot[1,2] + RK_yz*invrot[2,2]
+                R_K_invR_zx = RK_zx*invrot[0,0] + RK_zy*invrot[1,0] + RK_zz*invrot[2,0]
+                R_K_invR_zy = RK_zx*invrot[0,1] + RK_zy*invrot[1,1] + RK_zz*invrot[2,1]
+                R_K_invR_zz = RK_zx*invrot[0,2] + RK_zy*invrot[1,2] + RK_zz*invrot[2,2]
+    
+                Kxxq_modes_sym += R_K_invR_xx
+                Kyyq_modes_sym += R_K_invR_yy
+                Kzzq_modes_sym += R_K_invR_zz
+                Kxyq_modes_sym += (R_K_invR_xy + R_K_invR_yx)/2
+                Kyzq_modes_sym += (R_K_invR_yz + R_K_invR_zy)/2
+                Kxzq_modes_sym += (R_K_invR_xz + R_K_invR_zx)/2
 
-        # Kxxq_modes_sym = np.zeros_like(Kxxq_modes)
-        # Kyyq_modes_sym = np.zeros_like(Kyyq_modes)
-        # Kzzq_modes_sym = np.zeros_like(Kzzq_modes)
-        # Kxyq_modes_sym = np.zeros_like(Kxyq_modes)
-        # Kyzq_modes_sym = np.zeros_like(Kyzq_modes)
-        # Kxzq_modes_sym = np.zeros_like(Kxzq_modes)
-        # for rot in Rot_lists:
-        #     invrot = np.linalg.inv(rot)
-
-        #     RK_xx = rot[0,0]*Kxxq_modes + rot[0,1]*Kxyq_modes + rot[0,2]*Kxzq_modes # xx*xx xy*yx xz*zx
-        #     RK_xy = rot[0,0]*Kxyq_modes + rot[0,1]*Kyyq_modes + rot[0,2]*Kyzq_modes # xx*xy xy*yy xz*zy
-        #     RK_xz = rot[0,0]*Kxzq_modes + rot[0,1]*Kyzq_modes + rot[0,2]*Kzzq_modes # xx*xz xy*yz xz*zz
-        #     RK_yx = rot[1,0]*Kxxq_modes + rot[1,1]*Kxyq_modes + rot[1,2]*Kxzq_modes # yx*xx yy*yx yz*zx
-        #     RK_yy = rot[1,0]*Kxyq_modes + rot[1,1]*Kyyq_modes + rot[1,2]*Kyzq_modes # yx*xy yy*yy yz*zy
-        #     RK_yz = rot[1,0]*Kxzq_modes + rot[1,1]*Kyzq_modes + rot[1,2]*Kzzq_modes # yx*xz yy*yz yz*zz        
-        #     RK_zx = rot[2,0]*Kxxq_modes + rot[2,1]*Kxyq_modes + rot[2,2]*Kxzq_modes # yx*xx yy*yx yz*zx
-        #     RK_zy = rot[2,0]*Kxyq_modes + rot[2,1]*Kyyq_modes + rot[2,2]*Kyzq_modes # yx*xy yy*yy yz*zy
-        #     RK_zz = rot[2,0]*Kxzq_modes + rot[2,1]*Kyzq_modes + rot[2,2]*Kzzq_modes # yx*xz yy*yz yz*zz     
-
-        #     R_K_invR_xx = RK_xx*invrot[0,0] + RK_xy*invrot[1,0] + RK_xz*invrot[2,0]
-        #     R_K_invR_xy = RK_xx*invrot[0,1] + RK_xy*invrot[1,1] + RK_xz*invrot[2,1]
-        #     R_K_invR_xz = RK_xx*invrot[0,2] + RK_xy*invrot[1,2] + RK_xz*invrot[2,2]
-        #     R_K_invR_yx = RK_yx*invrot[0,0] + RK_yy*invrot[1,0] + RK_yz*invrot[2,0]
-        #     R_K_invR_yy = RK_yx*invrot[0,1] + RK_yy*invrot[1,1] + RK_yz*invrot[2,1]
-        #     R_K_invR_yz = RK_yx*invrot[0,2] + RK_yy*invrot[1,2] + RK_yz*invrot[2,2]
-        #     R_K_invR_zx = RK_zx*invrot[0,0] + RK_zy*invrot[1,0] + RK_zz*invrot[2,0]
-        #     R_K_invR_zy = RK_zx*invrot[0,1] + RK_zy*invrot[1,1] + RK_zz*invrot[2,1]
-        #     R_K_invR_zz = RK_zx*invrot[0,2] + RK_zy*invrot[1,2] + RK_zz*invrot[2,2]
-
-        #     Kxxq_modes_sym += R_K_invR_xx
-        #     Kyyq_modes_sym += R_K_invR_yy
-        #     Kzzq_modes_sym += R_K_invR_zz
-        #     Kxyq_modes_sym += (R_K_invR_xy + R_K_invR_yx)/2
-        #     Kyzq_modes_sym += (R_K_invR_yz + R_K_invR_zy)/2
-        #     Kxzq_modes_sym += (R_K_invR_xz + R_K_invR_zx)/2
-
-
-        # Kxxq_modes = Kxxq_modes_sym/Nrots
-        # Kyyq_modes = Kyyq_modes_sym/Nrots
-        # Kzzq_modes = Kzzq_modes_sym/Nrots
-        # Kxyq_modes = Kxyq_modes_sym/Nrots
-        # Kyzq_modes = Kyzq_modes_sym/Nrots
-        # Kxzq_modes = Kxzq_modes_sym/Nrots
+            Kxxq_modes = Kxxq_modes_sym/Nrots
+            Kyyq_modes = Kyyq_modes_sym/Nrots
+            Kzzq_modes = Kzzq_modes_sym/Nrots
+            Kxyq_modes = Kxyq_modes_sym/Nrots
+            Kyzq_modes = Kyzq_modes_sym/Nrots
+            Kxzq_modes = Kxzq_modes_sym/Nrots
         
         Kxx_mp.append(Kxxq_modes)
         Kyy_mp.append(Kyyq_modes)
@@ -447,7 +453,7 @@ def get_velmat_modepairs_q(phonon, q, factor=VaspToTHz,cutoff_frequency=1e-4): #
     
     if np.linalg.norm(q) < cutoff_frequency: # at Gamma point.
         freqs,eigvecs = phonon.get_frequencies_with_eigenvectors(q)
-        if (freqs<cutoff_frequency).any():
+        if (freqs<-cutoff_frequency).any():
             print('largest imaginary frequencies:',np.min(freqs[freqs<0])) 
             freqs = np.abs(freqs)
         ddm = get_dq_dynmat_q(phonon,q) # three components.
@@ -468,7 +474,7 @@ def get_velmat_modepairs_q(phonon, q, factor=VaspToTHz,cutoff_frequency=1e-4): #
         gvm = np.array([vx_modepairs,vy_modepairs,vz_modepairs])
         
         
-        return np.real(gvm)
+        return gvm
     
     else:
     
