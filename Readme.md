@@ -1,13 +1,16 @@
 # API Phonons
 ----
-Develped by **Xin Qian** (CU Boulder, MIT, HUST, current contant: xinqian21@hust.edu.cn).  
+Develped by **Xin Qian** (Huazhong University of Science & Technology, current contant: xinqian21@hust.edu.cn).  
 
 **API Phonons** is developed to perform complex phonon calculations when multiple packages are used, including extracting force constants and phononic properties of any empirical or machine learning potentials, calculating thermal conductivity using the Kubo's linear response theory, and computing pump-probe thermal responses using mode-resolved phonon properties. The API_xxx.py files contains modules and functions for interfacing different packages such as phonopy, lammps, phono3py, ShengBTE *etc*. All function names and modules should be self-explanatory.
 
 ## References
-If you find this package useful, please cite one of the following papers:  
-> Xin Qian and Ronggui Yang, Phys. Rev. B 98, 224108 (2018)  
-> Xin Qian, Shenyou Peng, Xiaobo Li, Yujie Wei, Ronggui Yang, Materials Today Physics 10, 100140 (2019)  
+If you find this package useful, please cite one of the following paper:
+> Xin Qian, Guanda Quan, Te-Huan Liu, and Ronggui Yang, **API Phonons: Python Interfaces for Phonon Transport Modeling**, https://arxiv.org/abs/2411.07774  
+
+## Acknowledgments
+This software development is supported by National Key R & D Project from Ministery of Science and Technology of China (Grant No. 2022YFA1203100).
+
 ## Installation
 
 In general, one needs to use gcc, gfortran, Cython compilers and parallel libs if necessary. 
@@ -56,7 +59,7 @@ cd ../src
 make yes-python
 make foo mode=shared
 ```
-Then add lammps to the envoronment variable PYTHONPATH.
+Then add the directory of lammps library to the envoronment variable PYTHONPATH.
 
 
 ## Example Scripts
@@ -67,7 +70,7 @@ In the folder Example_Scripts/, I provide several example files on how to use th
 #### Dispersion_Zr_hcp_gap:  
 This is a fairly simple example for computing phonon dispersion of hcp-phase of Zr.  
 
-I provided a soap based machine learning potential for hcp-Zr. With the LD_quipGap_phonopy_NAC.py computes the 
+I provided a machine learning GAP potential for hcp-Zr. With the LD_quipGap_phonopy_NAC.py computes the 
 harmonic force constants (FC2), while thirorder_gap.py computes third order anharmonic force constants (FC3). The 
 usage of thirdorder_gap_mp.py is the same as thirdorder_vasp.py for ShengBTE, execute with:  
 
