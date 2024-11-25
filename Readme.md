@@ -13,8 +13,15 @@ This software development is supported by National Key R & D Project from Minist
 
 ## Installation
 
-In general, one needs to use gcc, gfortran, Cython compilers and parallel libs if necessary. 
-Currently, **API Phonons** is built based the following packages:<br />
+You can use the following command to download API Phonons
+
+```
+git clone https://github.com/xinqian-mit/API_Phonons.git
+```
+
+Then simply add API Phonons directory to PYTHONPATH.
+
+To successfully run API Phonons, one needs to use gcc, gfortran, Cython compilers and parallel libs if necessary. Currently, **API Phonons** is built based the following packages:<br />
 
 > **ase** >3.20.1: https://wiki.fysik.dtu.dk/ase/  
 > **phonopy** >2.7.1 by A. Togo: https://phonopy.github.io/phonopy  
@@ -26,6 +33,7 @@ Currently, **API Phonons** is built based the following packages:<br />
 
 Please check the mannuals for each package installing/compiling them. 
 Other python libraries such as matscipy and numba are also required, which is usually provided if you use anaconda.
+
 
 ## Tips for Installation:
 
@@ -45,9 +53,6 @@ For ubuntu linux system just do:
 apt-get install texlive-latex-recommended
 ```
 
-The python executable bandplot is used to export band.yaml files to text, new version of 
-phonopy-bandplot by phonopy doesn't have this function anymore, but using bandplot requires 
-phonopy installed.
 
 #### lammps with the python interface
 When compiling lammps as python library, remember to do the following:  
