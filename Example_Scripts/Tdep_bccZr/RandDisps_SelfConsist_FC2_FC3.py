@@ -15,12 +15,9 @@ import API_quippy as api_q
 import API_phonopy as api_ph
  # remember to set this module to python path
 import copy as cp
-#from phonopy.interface.alm import get_fc2
 
 import API_alamode as api_alm
-import API_thirdorder as shengfc3
-import thirdorder_core
-import thirdorder_common
+import API_thirdorder as FC3
 
 
 Temperatures= [1200]
@@ -85,10 +82,10 @@ phonon_scell.set_band_structure(bands_sc, is_eigenvectors=True)
 phonon_scell.set_mesh([1,1,1], is_eigenvectors=True)
 
 # Get frange for third order force constants:
-poscar = shengfc3.read_POSCAR(".")
-sposcar = shengfc3.gen_SPOSCAR(poscar, Ncells[0], Ncells[1], Ncells[2])
-dmin, nequi, shifts = shengfc3.calc_dists(sposcar)
-frange = shengfc3.calc_frange(poscar, sposcar, nneigh, dmin)*10 # get cutoff in Angstrom.
+poscar = FC3.read_POSCAR(".")
+sposcar = FC3.gen_SPOSCAR(poscar, Ncells[0], Ncells[1], Ncells[2])
+dmin, nequi, shifts = FC3.calc_dists(sposcar)
+frange = FC3.calc_frange(poscar, sposcar, nneigh, dmin)*10 # get cutoff in Angstrom.
 options ='solver = dense, cutoff = '+str(frange)
 
 Natoms = phonon.get_supercell().get_number_of_atoms()
