@@ -1064,6 +1064,9 @@ def Solve1D_TempRN_udrift(XIx,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_tauN_qs,Ve
     C_tauN[C_tauN>THz] = 0.0
     C_tauR = Vec_cqs/(Vec_tauR_qs+eps) # EV*THz/Angstrom**3 /K 
     C_tauR[C_tauR>THz] = 0.0
+    
+    C_tau = C_tauN + C_tauR
+    
     Nscatt_ratio = (Vec_tau_qs+eps)/(Vec_tauN_qs+eps) # N-scattering rate/scattering rate. dimensionless
     Nscatt_ratio[Nscatt_ratio>THz]= 0.0    
     Q_qs = Phonon_GenRate(Vec_cqs,Vec_freqs) # Q0 = 1 unit temperature rise
@@ -1259,8 +1262,7 @@ def Solve1D_TempRN_udrift(XIx,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_tauN_qs,Ve
     GdT_N = x[1] # Green's function for pseudo temperature for R process
     Gu = x[2] # Green's Function for drift velocity
     
-
-    GdT =  1/np.sum(Vec_cqs)*(np.sum(Vec_cqs*(1-Nscatt_ratio))*GdT_R + np.sum(Vec_cqs*Nscatt_ratio)*GdT_N)  #g1/np.sum(Vec_cqs)
+    GdT = 1/np.sum(C_tau)*(np.sum(C_tauR)*GdT_R + np.sum(C_tauN)*GdT_N) 
     
     GdT_RTA = (bTR+bTN)/(A11+2*A12+A22) # Naive RTA without Normal processes
     
@@ -1295,6 +1297,8 @@ def Solve_cyln_TempRN_udrift(XIr,XIz,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_tau
     C_tauN[C_tauN>THz] = 0.0
     C_tauR = Vec_cqs/(Vec_tauR_qs+eps) # EV*THz/Angstrom**3 /K 
     C_tauR[C_tauR>THz] = 0.0
+    
+    C_tau = C_tauN + C_tauR
     Nscatt_ratio = (Vec_tau_qs)/(Vec_tauN_qs+eps) # N-scattering rate/scattering rate. dimensionless    
     Q_qs = Phonon_GenRate(Vec_cqs,Vec_freqs) # Q0 = 1 unit temperature rise
     
@@ -1476,7 +1480,7 @@ def Solve_cyln_TempRN_udrift(XIr,XIz,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_tau
     Gu = x[2:] # Green's Function for drift velocity
     
     
-    GdT = 1/np.sum(Vec_cqs)*(np.sum(Vec_cqs*(1-Nscatt_ratio))*GdT_R + np.sum(Vec_cqs*Nscatt_ratio)*GdT_N)  #g1/np.sum(Vec_cqs)
+    GdT = 1/np.sum(C_tau)*(np.sum(C_tauR)*GdT_R + np.sum(C_tauN)*GdT_N) 
     
     GdT_RTA = (bTR+bTN)/(A11+2*A12+A22) # Naive RTA without Normal processes
     
@@ -1512,6 +1516,12 @@ def Solve2D_TempRN_udrift(XIx,XIy,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_tauN_q
     C_tauN[C_tauN>THz] = 0.0
     C_tauR = Vec_cqs/(Vec_tauR_qs+eps) # EV*THz/Angstrom**3 /K 
     C_tauR[C_tauR>THz] = 0.0
+    
+    C_tau = C_tauR+C_tauN
+    
+    C_tau = Vec_cqs/(Vec_tau_qs+eps)
+    C_tau[C_tau>THz] = 0.0
+    
     Nscatt_ratio = (Vec_tau_qs)/(Vec_tauN_qs+eps) # N-scattering rate/scattering rate. dimensionless    
     Q_qs = Phonon_GenRate(Vec_cqs,Vec_freqs) # Q0 = 1 unit temperature rise
     
@@ -1669,12 +1679,9 @@ def Solve2D_TempRN_udrift(XIx,XIy,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_tauN_q
     Gu = x[2:] # Green's Function for drift velocity
     
     
-    # GdT = g1/np.sum(Vec_cqs)
+    GdT = 1/np.sum(C_tau)*(np.sum(C_tauR)*GdT_R + np.sum(C_tauN)*GdT_N) 
     
-    
-    GdT = 1/np.sum(Vec_cqs)*(np.sum(Vec_cqs*(1-Nscatt_ratio))*GdT_R + np.sum(Vec_cqs*Nscatt_ratio)*GdT_N)  #g1/np.sum(Vec_cqs)
-    
-    GdT_RTA = (bTR+bTN)/(A11+2*A12+A22) # Naive RTA without Normal processes
+    GdT_RTA = (bTR+bTN)/(A11+2*A12+A22) # Naive RTA with out Normal processes
     
     return GdT,Gu,GdT_RTA
 
@@ -1705,6 +1712,9 @@ def Solve3D_TempRN_udrift(XIx,XIy,XIz,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_ta
     C_tauN[C_tauN>THz] = 0.0
     C_tauR = Vec_cqs/(Vec_tauR_qs+eps) # EV*THz/Angstrom**3 /K 
     C_tauR[C_tauR>THz] = 0.0
+    
+    C_tau = C_tauR + C_tauN
+    
     Nscatt_ratio = (Vec_tau_qs)/(Vec_tauN_qs+eps) # N-scattering rate/scattering rate. dimensionless    
     Q_qs = Phonon_GenRate(Vec_cqs,Vec_freqs) # Q0 = 1 unit temperature rise
     
@@ -1730,9 +1740,9 @@ def Solve3D_TempRN_udrift(XIx,XIy,XIz,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_ta
     bvec = np.zeros((5,)+mesh_shape,dtype=Xdtype)
     
 
-    XQtau = np.zeros(mesh_shape,dtype=Xdtype) 
-    coeff_GTR = np.zeros(mesh_shape,dtype=Xdtype)
-    coeff_GTN = np.zeros(mesh_shape,dtype=Xdtype)
+    # XQtau = np.zeros(mesh_shape,dtype=Xdtype) 
+    # coeff_GTR = np.zeros(mesh_shape,dtype=Xdtype)
+    # coeff_GTN = np.zeros(mesh_shape,dtype=Xdtype)
  
 
     for iq in range(len(qpoints)): #range(Nq):
@@ -1755,11 +1765,11 @@ def Solve3D_TempRN_udrift(XIx,XIy,XIz,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_ta
         
         Qs_at_q = Q_qs[iq*Ns:(iq+1)*Ns]
         ns_at_q = Qs_at_q/(eps+Vec_freqs[iq*Ns:(iq+1)*Ns]*2*np.pi) # phonon number generation rate. 
-        cs_at_q = Vec_cqs[iq*Ns:(iq+1)*Ns]
+        # cs_at_q = Vec_cqs[iq*Ns:(iq+1)*Ns]
         
         taus_at_q = Vec_tau_qs[iq*Ns:(iq+1)*Ns]
         Fs_at_q = Vec_Fsc_qs[:,iq*Ns:(iq+1)*Ns]
-        omegas_at_q = Vec_freqs[iq*Ns:(iq+1)*Ns]*2*np.pi+eps
+        # omegas_at_q = Vec_freqs[iq*Ns:(iq+1)*Ns]*2*np.pi+eps
         
         Nscatt_ratio_q = Nscatt_ratio[iq*Ns:(iq+1)*Ns]
         Nratio_mat = np.broadcast_to(Nscatt_ratio_q,mesh_shape+Nscatt_ratio_q.shape)
@@ -1823,9 +1833,9 @@ def Solve3D_TempRN_udrift(XIx,XIy,XIz,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_ta
                 Asubmat[i,j] += coeffqq*rot_qq[i,j]/multi_q
         
         
-            XQtau += np.tensordot(Qs_at_q*taus_at_q,X_modes_at_rotq,axes=1)/multi_q
-            coeff_GTR += np.tensordot(cs_at_q*(1-Nscatt_ratio_q),X_modes_at_rotq,axes=1)/multi_q
-            coeff_GTN += np.tensordot(cs_at_q*Nscatt_ratio_q,X_modes_at_rotq,axes=1)/multi_q
+            #XQtau += np.tensordot(Qs_at_q*taus_at_q,X_modes_at_rotq,axes=1)/multi_q
+            #coeff_GTR += np.tensordot(cs_at_q*(1-Nscatt_ratio_q),X_modes_at_rotq,axes=1)/multi_q
+            #coeff_GTN += np.tensordot(cs_at_q*Nscatt_ratio_q,X_modes_at_rotq,axes=1)/multi_q
             
      
 
@@ -1889,49 +1899,51 @@ def Solve3D_TempRN_udrift(XIx,XIy,XIz,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_ta
     
 
            
-    XCT0qu = np.zeros(mesh_shape,dtype=Xdtype)
+    #XCT0qu = np.zeros(mesh_shape,dtype=Xdtype)
 
-    for iq in range(len(qpoints)):
-        qfrac = qpoints[iq]
-        rots_sitesym = rots_qpoints[iq]
-        multi_q = len(rots_sitesym)
+    #for iq in range(len(qpoints)):
+    #    qfrac = qpoints[iq]
+    #    rots_sitesym = rots_qpoints[iq]
+    #    multi_q = len(rots_sitesym)
         
-        Qs_at_q = Q_qs[iq*Ns:(iq+1)*Ns]
+    #    Qs_at_q = Q_qs[iq*Ns:(iq+1)*Ns]
         
-        Nscatt_ratio_q = Nscatt_ratio[iq*Ns:(iq+1)*Ns]
-        cs_at_q = Vec_cqs[iq*Ns:(iq+1)*Ns]
-        omegas_at_q = Vec_freqs[iq*Ns:(iq+1)*Ns]*2*np.pi+eps        
-        Fs_at_q = Vec_Fsc_qs[:,iq*Ns:(iq+1)*Ns]
-        taus_at_q = Vec_tau_qs[iq*Ns:(iq+1)*Ns]
+    #    Nscatt_ratio_q = Nscatt_ratio[iq*Ns:(iq+1)*Ns]
+    #    cs_at_q = Vec_cqs[iq*Ns:(iq+1)*Ns]
+    #    omegas_at_q = Vec_freqs[iq*Ns:(iq+1)*Ns]*2*np.pi+eps        
+    #    Fs_at_q = Vec_Fsc_qs[:,iq*Ns:(iq+1)*Ns]
+    #    taus_at_q = Vec_tau_qs[iq*Ns:(iq+1)*Ns]
         
         
         #qdotu = np.zeros(mesh_shape,dtype=Xdtype)
-        for rot in rots_sitesym:
-            rot_qfrac = np.dot(rot,qfrac)
-            rotq = np.dot(reclat,rot_qfrac)
-            qdotu = rotq[0]*Gu[0]+rotq[1]*Gu[1]+rotq[2]*Gu[2]
+    #    for rot in rots_sitesym:
+    #        rot_qfrac = np.dot(rot,qfrac)
+    #        rotq = np.dot(reclat,rot_qfrac)
+    #        qdotu = rotq[0]*Gu[0]+rotq[1]*Gu[1]+rotq[2]*Gu[2]
             
             
-            r_cart = similarity_transformation(reclat, rot)            
-            rot_Fs = np.dot(r_cart,Fs_at_q) #(3,3) by (3,Ns)            
-            # X_modes_at_rotq = X2D_modes_at_q(XIx,XIz,OMEGAH,rot_Fs,taus_at_q, xz_directs,Xdtype)
-            #  coeff_qu = T0*np.tensordot(cs_at_q*Nscatt_ratio_q/omegas_at_q,X_modes_at_rotq,axes=1)/multi_q
+    #        r_cart = similarity_transformation(reclat, rot)            
+    #        rot_Fs = np.dot(r_cart,Fs_at_q) #(3,3) by (3,Ns)            
+    #        # X_modes_at_rotq = X2D_modes_at_q(XIx,XIz,OMEGAH,rot_Fs,taus_at_q, xz_directs,Xdtype)
+    #        #  coeff_qu = T0*np.tensordot(cs_at_q*Nscatt_ratio_q/omegas_at_q,X_modes_at_rotq,axes=1)/multi_q
             
-            X_modes_at_rotqpos = X3D_modes_at_q(XIx,XIy,XIz,OMEGAH,rot_Fs,taus_at_q,Xdtype)
-            X_modes_at_rotqneg = X3D_modes_at_q(XIx,XIy,XIz,OMEGAH,-rot_Fs,taus_at_q,Xdtype)
-            coeff_qu_pos = T0*np.tensordot(cs_at_q*Nscatt_ratio_q/omegas_at_q,X_modes_at_rotqpos,axes=1)
-            coeff_qu_neg = T0*np.tensordot(cs_at_q*Nscatt_ratio_q/omegas_at_q,X_modes_at_rotqneg,axes=1)
-            coeff_qu = (coeff_qu_pos-coeff_qu_neg)/multi_q/2.0
+    #        X_modes_at_rotqpos = X3D_modes_at_q(XIx,XIy,XIz,OMEGAH,rot_Fs,taus_at_q,Xdtype)
+    #        X_modes_at_rotqneg = X3D_modes_at_q(XIx,XIy,XIz,OMEGAH,-rot_Fs,taus_at_q,Xdtype)
+    #        coeff_qu_pos = T0*np.tensordot(cs_at_q*Nscatt_ratio_q/omegas_at_q,X_modes_at_rotqpos,axes=1)
+    #        coeff_qu_neg = T0*np.tensordot(cs_at_q*Nscatt_ratio_q/omegas_at_q,X_modes_at_rotqneg,axes=1)
+    #        coeff_qu = (coeff_qu_pos-coeff_qu_neg)/multi_q/2.0
             
             
-            XCT0qu += coeff_qu*qdotu
+    #        XCT0qu += coeff_qu*qdotu
        
         
-    XCvT =  coeff_GTR*GdT_R + coeff_GTN*GdT_N 
+    #XCvT =  coeff_GTR*GdT_R + coeff_GTN*GdT_N 
     
-    g1 = XCvT + XQtau  + XCT0qu #
+    #g1 = XCvT + XQtau  + XCT0qu #
     
-    GdT = g1/np.sum(Vec_cqs)
+    #GdT = g1/np.sum(Vec_cqs)
+    
+    GdT = 1/np.sum(C_tau)*(np.sum(C_tauR)*GdT_R + np.sum(C_tauN)*GdT_N) 
     
     GdT_RTA = (bTR+bTN)/(A11+2*A12+A22) # Naive RTA without Normal processes
     
