@@ -6,7 +6,7 @@ Develped by **Xin Qian** (Huazhong University of Science & Technology, current c
 
 ## References
 If you find this package useful, please cite one of the following paper:
-> Xin Qian, Guanda Quan, Te-Huan Liu, and Ronggui Yang, **API Phonons: Python Interfaces for Phonon Transport Modeling**, https://arxiv.org/abs/2411.07774  
+> Xin Qian, Guanda Quan, Te-Huan Liu, and Ronggui Yang, **API Phonons: Python Interfaces for Phonon Transport Modeling**, Materials Today Physics, https://doi.org/10.1016/j.mtphys.2024.101630. Preprint on ArXiv: https://arxiv.org/abs/2411.07774  
 
 ## Acknowledgments
 This software development is supported by National Key R & D Project from Ministery of Science and Technology of China (Grant No. 2022YFA1203100).
