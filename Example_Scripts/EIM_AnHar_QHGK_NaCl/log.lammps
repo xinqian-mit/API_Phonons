@@ -4,10 +4,9 @@ atom_style atomic
 atom_modify map array sort 0 0
 boundary p p p
 box tilt large
-region cell prism    0 11.994262291295295 0 10.387335843915475 0 9.79327415159296     5.997131145647648 5.997131145647648 3.462445281305158     units box
+region cell prism    0 11.994262291295295 0 10.387335843915475 0 9.79327415159296     5.997131145647647 5.997131145647647 3.4624452813051576     units box
 create_box 2 cell
 Created triclinic box = (0.0000000 0.0000000 0.0000000) to (11.994262 10.387336 9.7932742) with tilt (5.9971311 5.9971311 3.4624453)
-WARNING: Triclinic box skew is large (../domain.cpp:219)
   1 by 1 by 1 MPI processor grid
 echo none
 Created 54 atoms
@@ -124,6 +123,7 @@ Setting atom values ...
 pair_style eim
 pair_coeff * * Na Cl ffield.eim Na Cl
 Reading potential file ffield.eim with DATE: 2010-08-31
+compute pe_peratom all pe/atom
 mass 1 22.989769274086011563440479221754
 mass 2 35.449999990880691314032446825877
 variable pxx equal pxx
@@ -153,12 +153,12 @@ Neighbor list info ...
       pair build: half/bin/newton/tri
       stencil: half/bin/3d/tri
       bin: standard
-Per MPI rank memory allocation (min/avg/max) = 3.247 | 3.247 | 3.247 Mbytes
+Per MPI rank memory allocation (min/avg/max) = 3.372 | 3.372 | 3.372 Mbytes
 PotEng Pxx E_mol E_coul 
   -178.91894   -13624.584            0            0 
-Loop time of 5.00679e-06 on 1 procs for 0 steps with 54 atoms
+Loop time of 8.10623e-06 on 1 procs for 0 steps with 54 atoms
 
-79.9% CPU use with 1 MPI tasks x no OpenMP threads
+111.0% CPU use with 1 MPI tasks x no OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -168,7 +168,7 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 5.007e-06  |            |       |100.00
+Other   |            | 8.106e-06  |            |       |100.00
 
 Nlocal:        54.0000 ave          54 max          54 min
 Histogram: 1 0 0 0 0 0 0 0 0 0
