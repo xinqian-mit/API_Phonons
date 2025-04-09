@@ -348,7 +348,7 @@ def vFmodes_full_to_irep(F_modes_full,D_boundary,gv_full,gv_ired,tau_ired,freqs_
         for s in range(Ns):
             iqs = iq*Ns+s
             Fqfs =  F_modes_full[:,iqfull,s]/(freqs_ired[iq,s]+eps)/2/np.pi*10 # Angstrom 
-            Fqfs = Fqfs/(1+Fqfs/(D_boundary/Angstrom))
+            Fqfs = Fqfs/(1+np.abs(Fqfs)/(D_boundary/Angstrom))
             vqfs =  gv_full[:,iqfull,s] # Angstrom THz
             
             vF_modes_ired[:,:,iqs] += np.tensordot(vqfs,Fqfs,axes=0)/weights[iq]
@@ -388,6 +388,11 @@ def load_ShengBTE_Phonons(T0,phonon,Dir_BTE_HarPhons,Dir_BTE_MFD,Dir_BTE_lifetim
     freqs_ired = np.loadtxt(Dir_BTE_HarPhons+'BTE.omega')/2/np.pi # in THz
     qpoints_full_list = np.loadtxt(Dir_BTE_HarPhons+'BTE.qpoints_full')
     qpoints_full = qpoints_full_list[:,2:]
+    
+    # wrap into the 1st BZ.
+    qpoints_full[qpoints_full>0.5] -=1
+    qpoints_full[qpoints_full<-0.5] +=1
+    
 
     if calc_fullmesh:
         freqs = expand_qired2qfull(freqs_ired,qpoints_full_list)
@@ -407,7 +412,7 @@ def load_ShengBTE_Phonons(T0,phonon,Dir_BTE_HarPhons,Dir_BTE_MFD,Dir_BTE_lifetim
     if calc_fullmesh:
         cqs = cqseV/np.prod(mesh)/phonon._unitcell.get_volume()   
         gv = import_BTE_PhvecProps(Dir_BTE_HarPhons+'BTE.v_full',Ns)*10 # Angstrom THz
-        gvi = import_BTE_PhvecProps(Dir_BTE_HarPhons+'BTE.v',Ns)*10
+        gvi = import_BTE_PhvecProps(Dir_BTE_HarPhons+'BTE.v',Ns)*10 # Angstrom THz
 
     else:
         gv = import_BTE_PhvecProps(Dir_BTE_HarPhons+'BTE.v',Ns)*10 # group velocity at irred wedge. 
@@ -429,6 +434,7 @@ def load_ShengBTE_Phonons(T0,phonon,Dir_BTE_HarPhons,Dir_BTE_MFD,Dir_BTE_lifetim
         speed_qs = np.sqrt(gv[0]**2+gv[1]**2+gv[2]**2) #Angstrom THz
     
     scatt_rate_b = speed_qs/(D_boundary/Angstrom) #scattering rate ps^-1
+    #print(scatt_rate_b)
     
     #print(four_phonon)
     
@@ -470,10 +476,16 @@ def load_ShengBTE_Phonons(T0,phonon,Dir_BTE_HarPhons,Dir_BTE_MFD,Dir_BTE_lifetim
 
     if calc_fullmesh:
         # expand lifetimes to qpoints_full
+        
+        tau_qs_ired = tau_qs
+        
         tau_N = expand_qired2qfull(tau_N,qpoints_full_list)
         tau_R = expand_qired2qfull(tau_R,qpoints_full_list)
         tau_ph = expand_qired2qfull(tau_ph, qpoints_full_list)
         tau_qs = expand_qired2qfull(tau_qs,qpoints_full_list)
+        
+        
+        
         #Vec_Rscatt_rate = expand_qired2qfull(scatt_rate_I,qpoints_full_list)
 
 
@@ -490,19 +502,27 @@ def load_ShengBTE_Phonons(T0,phonon,Dir_BTE_HarPhons,Dir_BTE_MFD,Dir_BTE_lifetim
     
     
     if calc_fullmesh:
-        F_modes = F_modes_full/(eps+freqs*2*np.pi)*10 # full mesh.
+        F_modes = F_modes_full/(eps+freqs*2*np.pi)*10 # full mesh. Angstrom.
         Vec_Fqs = np.zeros((3,Nq*Ns))    
         for i in range(3):
             Vec_Fqs[i] = Vectorize_mode_props(F_modes[i])
-
-        Vec_Fsc_qs = Vec_Fqs/(1+Vec_Fqs/D_boundary)
         
-        #Vec_tausc_qs = np.sqrt(np.sum(Vec_Fqs*Vec_vqs,axis=0))/np.sqrt(np.sum(Vec_vqs**2,axis=0))
+        Vec_MFP = np.sqrt(np.sum(Vec_Fqs*Vec_Fqs,axis=0))
+        SupFunc = 1/(1+Vec_MFP/(D_boundary/Angstrom))
+           
+        Vec_SupFunc_reap = np.broadcast_to(SupFunc,(3,)+SupFunc.shape)
         
-        Vec_tausc_qs = np.sqrt(np.sum(Vec_Fqs*Vec_vqs,axis=0))/np.sqrt(np.sum(Vec_vqs**2,axis=0))
+        Vec_Fsc_qs = Vec_Fqs*Vec_SupFunc_reap
         
-        Vec_tausc_qs[np.isnan(Vec_tausc_qs)] = 0.0
-        Vec_tausc_qs[np.abs(Vec_tausc_qs)>np.sqrt(THz)] = 0.0
+        
+        # this is performed on irreducible BZ.
+        Vec_vFqs_ired,Vec_Fsc_qs_ired,Vec_tausc_qs_ired = vFmodes_full_to_irep(F_modes_full,D_boundary,gv,gvi,tau_qs_ired,freqs_ired,qpoints_full_list,tau_Dims)
+        
+        tausc_qs_ired = np.reshape(Vec_tausc_qs_ired, freqs_ired.shape)
+        tausc_qs = expand_qired2qfull(tausc_qs_ired,qpoints_full_list)
+        Vec_tausc_qs = Vectorize_mode_props(tausc_qs)
+        
+        
         # for i in range(3):
         #     Vec_Fsc_qs[i] = np.sqrt(np.abs(Vec_Fqs[i]*Vec_vqs[i]*Vec_tausc_qs))*np.sign(Vec_Fqs[i]) #Angstrom
 
@@ -525,12 +545,12 @@ def load_ShengBTE_Phonons(T0,phonon,Dir_BTE_HarPhons,Dir_BTE_MFD,Dir_BTE_lifetim
     Vec_tauRsc_qs[Vec_tauRsc_qs>THz] = Vec_tauR_qs[Vec_tauRsc_qs>THz]
     Vec_tausc_qs[Vec_tausc_qs>THz] = Vec_tau_qs[Vec_tausc_qs>THz]
     #Vec_Fsc_qs = Vec_vqs*Vec_tau_qs # 
-    Vec_Fsc_qs*= Angstrom
+    Vec_Fsc_qs*= Angstrom # MFD convert to m.
     
     kappa_cvF = np.zeros((3,3))
     if calc_fullmesh:
         for (i,j) in [[0,0],[1,1],[2,2],[1,2],[0,2],[0,1]]:
-            kappa_cvF[i,j] = np.sum(Vec_vqs[i]*Vec_Fqs[j]*Vec_cqs)* (EV/Angstrom**3)*(Angstrom*THz)
+            kappa_cvF[i,j] = np.sum(Vec_vqs[i]*Vec_Fqs[j]*Vec_cqs)* (EV/Angstrom**3)*(Angstrom**2*THz)
             kappa_cvF[j,i] = kappa_cvF[i,j]    
     else:
         Gamma = 1/Vec_tausc_qs
