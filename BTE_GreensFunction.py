@@ -6,6 +6,104 @@ import h5py
 from scipy.interpolate import RegularGridInterpolator
 #import multiprocessing as mp
 
+
+def calc_SED_secsound(k,omega_plus):
+    
+    eps =  np.min([0.0001,np.min(np.abs(omega_plus.imag))*0.02])
+    omega_real = omega_plus.real
+    omega_imag = omega_plus.imag  + eps
+    
+    # interpolate
+    kvec = np.linspace(np.min(k),np.max(k),401)
+    omega_intp = np.interp(kvec,k,omega_real)
+    gamma_intp = np.interp(kvec,k,omega_imag)
+    
+    # omega range
+    omega_vec = np.linspace(0,np.max(omega_intp)*2,301)
+    
+    SPECFUNC = np.zeros([len(kvec),len(omega_vec)])
+    
+    for i,ki in enumerate(kvec):
+        w0 = omega_intp[i]
+        g0 = gamma_intp[i]
+        
+        SPECFUNC[i] = 0.5*(np.abs(g0)+eps)/((omega_vec-w0)**2+g0**2/4+eps)
+        
+    K,OMEGA = np.meshgrid(kvec,omega_vec,indexing='ij')
+    return K,OMEGA,SPECFUNC
+    
+    
+
+    
+    
+    
+
+def get_secsound_dispersion(k,alpha,eta,v0,gamma,lowOrder=True):
+    
+    B = (alpha+eta)*k**2+gamma
+    vss = np.sqrt(v0**2+gamma/2*(alpha-eta)) # phase velocity of second sound
+    if lowOrder:
+        D = (vss*k)**2 - gamma**2/4 + 0j
+    else:
+        D = (v0*k)**2-(gamma+(eta-alpha)*k**2)**2/4+0j
+        
+        
+    omega_plus = -1j/2*B+np.sqrt(D)
+    omega_minus = -1j/2*B-np.sqrt(D)
+    
+    return omega_plus,omega_minus,vss
+
+
+def get_momentum_transCoeffs(kappa_cvF,Vec_cqs,Vec_vqs,Vec_freqs,Vec_tau_qs,Vec_tauR_qs, Nratio_qs,phonon,rots_qpoints,axis=0):
+    # calculate second sound velocity in Angstrom*THz = 100 m/s
+    eps = 1e-50
+    qpoints = phonon.get_mesh_dict()['qpoints']
+    Ns = phonon.get_unitcell().get_number_of_atoms()*3
+    reclat = np.linalg.inv( phonon.get_unitcell().get_cell())*2*np.pi
+    
+    C = np.sum(Vec_cqs) # EV/Angstrom**3/K
+    convert = (EV/Angstrom**3)*(Angstrom**2*THz)
+    kappa = kappa_cvF[axis,axis] / convert # in EV*THz/Angstrom/K
+    
+    Pi = 0 # momentum flux Pi = Cvq/w*Nratio
+    A = 0 # momentum tensor Cq^2 /w^2   
+    M = 0 # phonon viscosity
+    Gamma = 0# momentum damping rate
+    
+    for iq,qfrac in enumerate(qpoints):
+        rots_at_q = rots_qpoints[iq]
+        multi_q = len(rots_at_q)
+        
+        omegas_at_q = Vec_freqs[iq*Ns:(iq+1)*Ns]*2*np.pi+eps
+        cs_at_q = Vec_cqs[iq*Ns:(iq+1)*Ns]
+        vs_at_q = Vec_vqs[:,iq*Ns:(iq+1)*Ns]
+        Nratios_at_q = Nratio_qs[iq*Ns:(iq+1)*Ns] 
+        taus_at_q = Vec_tau_qs[iq*Ns:(iq+1)*Ns]
+        tauRs_at_q = Vec_tauR_qs[iq*Ns:(iq+1)*Ns] 
+        
+        tauRs_at_q[tauRs_at_q==0] = 1e50
+        
+        q = np.dot(reclat,qfrac)                
+        
+        for rot in rots_at_q:
+            r_cart = similarity_transformation(reclat, rot)
+            rot_vs = np.dot(r_cart,vs_at_q)     
+            rot_q = np.dot(r_cart,q)
+            
+            Pi += np.sum(cs_at_q*rot_q[axis]*rot_vs[axis]/omegas_at_q*Nratios_at_q)/multi_q
+            A += np.sum(cs_at_q*rot_q[axis]**2/omegas_at_q**2)/multi_q
+            
+            M  += np.sum(cs_at_q*rot_q[axis]**2/omegas_at_q**2*rot_vs[axis]**2*taus_at_q)/multi_q
+            Gamma += np.sum(cs_at_q*rot_q[axis]**2/omegas_at_q**2*Nratios_at_q/tauRs_at_q)/multi_q
+            
+        alpha = kappa/C
+        v0 = np.sqrt(Pi**2/A/C)
+        gamma = Gamma/A
+        eta = M/A
+        
+    return alpha,v0,eta,gamma
+            
+
 def get_vel_ss(Vec_cqs,Vec_vqs,Vec_freqs,phonon,rots_qpoints,axis=0):
     # calculate second sound velocity in Angstrom*THz = 100 m/s
     eps = 1e-50
