@@ -330,7 +330,138 @@ def vFmodes_full_to_irep(F_modes_full,D_boundary,gv_full,gv_ired,tau_ired,freqs_
     
 
     return vF_modes_ired,F_modes_ired,np.abs(Vec_tau_sc)
+
+
+
+
+def load_ShengBTE_KCM(T0,phonon,Dir_BTE_HarPhons,Dir_BTE_MFD,Dir_BTE_lifetime,D_boundary,is_isotope,four_phonon=False,calc_fullmesh=False,eta_Dims=[0,1],Gamma_cut=False):
+    # Loading
+    eps = 1e-50
+    omega = np.loadtxt(Dir_BTE_HarPhons+'BTE.omega') # 2*pi*Thz
+    qpoints_list = np.loadtxt(Dir_BTE_HarPhons+'BTE.qpoints')
+    qpoints_full_list = np.loadtxt(Dir_BTE_HarPhons+'BTE.qpoints_full')
+    try:
+        RecLatt = np.loadtxt(Dir_BTE_HarPhons+'BTE.ReciprocalLatticeVectors') # nm-1
+    except:
+        RecLatt = np.linalg.inv( phonon.get_unitcell().get_cell())*2*np.pi*10 #
+    v_full = np.loadtxt(Dir_BTE_HarPhons+'BTE.v_full') # km/s
+    w_ph = np.loadtxt(Dir_BTE_lifetime+'BTE.w_3ph')[:,-1] # THz
+    w_ph_N = np.loadtxt(Dir_BTE_lifetime+'BTE.w_3ph_Normal')[:,-1] # THz
+    F_final = np.loadtxt(Dir_BTE_MFD+'BTE.F_final') # nmTHz
+    if four_phonon:
+        w_ph += np.loadtxt(Dir_BTE_lifetime+'BTE.w_4ph')[:,-1]
+        w_ph_N += np.loadtxt(Dir_BTE_lifetime+'BTE.w_4ph_Normal')[:,-1] 
+    if is_isotope:
+        w_ph += np.loadtxt(Dir_BTE_HarPhons+'BTE.w_isotopic')[:,1]
+        
+    # Phonon qpoints
+    ired = qpoints_list[:,1].astype(int)-1
+    full = qpoints_full_list[:,1].astype(int)-1
+    Nq,(Nqired,Ns) = len(full),omega.shape
+    qpoints_full = qpoints_full_list[:,2:]
+    mesh = np.round(1/(1-qpoints_full[-1])).astype(int)
+    qpoints_full = np.round(qpoints_full*mesh)/mesh
+    def qpoints_correction(q): # Only used if the FBZ is a layered hexagon
+        qx,qy,qz = q.T
+        s = np.maximum(qx,qy)>(1-qx-qy)
+        b = np.minimum(qx,qy)>(2-qx-qy)
+        lr = (qx>=qy)
+        qx[s&lr|b] -= 1
+        qy[s&~lr|b] -= 1
+        qz[qz>0.5] -= 1
+        q_correct = np.c_[qx,qy,qz]
+        return q_correct
+    qpoints_full = qpoints_correction(qpoints_full)
+    q = qpoints_full @ RecLatt # nm-1
     
+    # Full mesh
+    omega_full = omega[full]
+    v = v_full.T.reshape((3,Nq,Ns),order='F')
+    F = F_final.T.reshape((3,Nq,Ns),order='F')/(omega_full+eps) # nm
+    w_ph = w_ph.reshape((Nqired,Ns),order='F')[full]
+    w_ph_N = w_ph_N.reshape((Nqired,Ns),order='F')[full]
+    
+    # Relaxation time
+    #Directions = np.atleast_1d(eta_Dims)
+    v_Dims = np.linalg.norm(v[eta_Dims],axis=0)
+    w_boundary = 2*v_Dims/(D_boundary*1e9)
+    tau_ph = 1/(w_ph+eps)
+    tau = 1/(w_ph+w_boundary+eps)
+    Nratio = w_ph_N*tau_ph
+    
+    # Capacity & Conductivity
+    Latt = 2*np.pi*np.linalg.inv(RecLatt).T # nm
+    Vol = np.abs(Latt[0] @ np.cross(Latt[1],Latt[2]))*1e3 # A^3
+    from scipy.constants import hbar; hbar *= 1e12 # J*ps
+    from scipy.constants import k as kb # J/K
+    x = hbar*omega_full/kb/T0/2
+    c = kb*x**2/np.sinh(x+eps)**2/Vol/Nq*1e24 # J/cm^3
+    kappa_cvF = np.einsum('mn,imn,jmn->ij',c,v,F)
+    kappa_RTA_bulk = np.einsum('mn,imn,jmn->ij',c*tau_ph,v,v)
+    kappa_RTA = np.einsum('mn,imn,jmn->ij',c*tau,v,v)
+    
+    # Correct Nratio
+    # Assert tensors are diagonal
+   
+    q_omega = q.T[:,:,None]/(omega_full+eps)
+    kappa_u = np.diag(kappa_cvF-kappa_RTA_bulk) #drifting component
+    def corrected_paramenters(Nratio,zeta=0.9):
+        Pij = np.einsum('mn,imn,jmn->ij',Nratio*c,q_omega[eta_Dims],v[eta_Dims])
+        Gij = np.einsum('mn,imn,jmn->ij',(1-Nratio)*Nratio*c*w_ph,q_omega[eta_Dims],q_omega[eta_Dims])
+        pij = np.einsum('mn,imn,jmn->ij',2*c,q_omega[eta_Dims],v[eta_Dims])
+        gij = np.einsum('mn,imn,jmn->ij',(1-2*Nratio)*c*w_ph,q_omega[eta_Dims],q_omega[eta_Dims])
+        # kappa_uij = Pij.T @ np.linalg.inv(Gij) @ Pij
+        # kappa_uij = np.einsum('ji,jk,kl->il',Pij,np.linalg.inv(Gij),Pij)
+        kappa_uij = np.diag(Pij**2)/np.diag(Gij)
+        delta_Nr = np.diag(Pij**2-Gij*kappa_u[eta_Dims])/np.diag(gij*kappa_u[eta_Dims]-Pij*pij)
+        Nr = Nratio+np.mean(delta_Nr)*zeta
+        np.clip(Nr,0,1,out=Nr)
+        return Nr,kappa_uij
+    Nr,kappa_uij = corrected_paramenters(Nratio)
+    for i in range(30):
+        Nr,kappa_uij = corrected_paramenters(Nr)
+        if np.linalg.norm(kappa_uij/kappa_u[eta_Dims]-1)<0.01:
+            break
+    
+    kappa_u = np.diag(kappa_u)
+    for i in eta_Dims:
+        kappa_u[i,i] = kappa_uij[i]
+    
+    # Output
+    from scipy.constants import elementary_charge as E_charge
+    w_qgrid = phonon.get_mesh_dict()['weights']
+    # qpoints_full = qpoints_full_list[:,2:]
+    # qpoints_full[qpoints_full>0.5] -= 1
+    # qpoints_full[qpoints_full<-0.5] += 1
+    if calc_fullmesh:
+        omega = omega_full
+    else:
+        Nq = Nqired
+        c = c[ired]*w_qgrid[:,None]
+        v = v[:,ired]
+        tau = tau[ired]
+        F = v*tau
+        Nr = Nr[ired] 
+    Vec_freqs = omega.flatten()/2/np.pi # THz
+    Vec_cqs = c.flatten()/E_charge*1e-24 # ph_w*eV/A^3/K
+    Vec_vqs = v.reshape(3,Nq*Ns)*10 # A/ps
+    Vec_Fsc_qs = F.reshape(3,Nq*Ns)*1e-9 # m
+    Vec_tausc_qs = tau.flatten() # ps
+    Vec_tauNsc_qs = (tau/(Nr+eps)).flatten()
+    Vec_tauRsc_qs = (tau/(1-Nr+eps)).flatten()
+    Nratio_qs = Nr.flatten()
+    
+    kappa_RTA_qs = np.zeros((3,3,len(Vec_cqs)))
+    
+    for i in np.arange(3):
+        for j in np.arange(3):
+            kappa_RTA_qs[i,j] = Vec_cqs*Vec_vqs[i]*Vec_vqs[j]*Vec_tausc_qs
+    
+    if Gamma_cut == False:
+        return qpoints_full,Vec_freqs,Vec_cqs,Vec_vqs,Vec_Fsc_qs,Vec_tausc_qs,Vec_tauNsc_qs,Vec_tauRsc_qs,kappa_RTA,kappa_u,kappa_RTA_qs,Nratio_qs 
+    else:
+        return qpoints_full,Vec_freqs[3:],Vec_cqs[3:],Vec_vqs[:,3:],Vec_Fsc_qs[:,3:],Vec_tausc_qs[3:],Vec_tauNsc_qs[3:],Vec_tauRsc_qs[3:],kappa_RTA,kappa_u,kappa_RTA_qs[3:],Nratio_qs[3:]
+
     
 def load_ShengBTE_Phonons(T0,phonon,Dir_BTE_HarPhons,Dir_BTE_MFD,Dir_BTE_lifetime,D_boundary,is_isotope,four_phonon=False,calc_fullmesh=False,tau_Dims=[0,1,2],Gamma_cut=False):
     eps = 1e-50
@@ -341,11 +472,33 @@ def load_ShengBTE_Phonons(T0,phonon,Dir_BTE_HarPhons,Dir_BTE_MFD,Dir_BTE_lifetim
 
     freqs_ired = np.loadtxt(Dir_BTE_HarPhons+'BTE.omega')/2/np.pi # in THz
     qpoints_full_list = np.loadtxt(Dir_BTE_HarPhons+'BTE.qpoints_full')
+    qpoints_list = np.loadtxt(Dir_BTE_HarPhons+'BTE.qpoints')
+
+    ired = qpoints_list[:,1].astype(int)-1
+    full = qpoints_full_list[:,1].astype(int)-1
+    Nq,(Nqired,Ns) = len(full),freqs_ired.shape
     qpoints_full = qpoints_full_list[:,2:]
+    mesh = np.round(1/(1-qpoints_full[-1])).astype(int)
+    qpoints_full = np.round(qpoints_full*mesh)/mesh
+    def qpoints_correction(q): # Only used if the FBZ is a layered hexagon
+        qx,qy,qz = q.T
+        s = np.maximum(qx,qy)>(1-qx-qy)
+        b = np.minimum(qx,qy)>(2-qx-qy)
+        lr = (qx>=qy)
+        qx[s&lr|b] -= 1
+        qy[s&~lr|b] -= 1
+        qz[qz>0.5] -= 1
+        q_correct = np.c_[qx,qy,qz]
+        return q_correct
+    qpoints_full = qpoints_correction(qpoints_full)
     
-    # wrap into the 1st BZ.
-    qpoints_full[qpoints_full>0.5] -=1
-    qpoints_full[qpoints_full<-0.5] +=1
+    
+    
+    # qpoints_full = qpoints_full_list[:,2:]
+    
+    # # wrap into the 1st BZ.
+    # qpoints_full[qpoints_full>0.5] -=1
+    # qpoints_full[qpoints_full<-0.5] +=1
     
 
     if calc_fullmesh:
@@ -502,10 +655,15 @@ def load_ShengBTE_Phonons(T0,phonon,Dir_BTE_HarPhons,Dir_BTE_MFD,Dir_BTE_lifetim
     Vec_Fsc_qs*= Angstrom # MFD convert to m.
     
     kappa_cvF = np.zeros((3,3))
+    
+    kappa_qs_eV = np.zeros((3,3,len(Vec_cqs)))
+    
     if calc_fullmesh:
         for (i,j) in [[0,0],[1,1],[2,2],[1,2],[0,2],[0,1]]:
             kappa_cvF[i,j] = np.sum(Vec_vqs[i]*Vec_Fqs[j]*Vec_cqs)* (EV/Angstrom**3)*(Angstrom**2*THz)
             kappa_cvF[j,i] = kappa_cvF[i,j]    
+            kappa_qs_eV[i,j] = Vec_vqs[i]*Vec_Fqs[j]*Vec_cqs
+            kappa_qs_eV[j,i] = kappa_qs_eV[i,j]
     else:
         Gamma = 1/Vec_tausc_qs
         Gamma[np.isnan(Gamma)]=0
@@ -516,13 +674,16 @@ def load_ShengBTE_Phonons(T0,phonon,Dir_BTE_HarPhons,Dir_BTE_MFD,Dir_BTE_lifetim
             # kappa_cvF[i,j] = np.sum(Vec_Fsc_qs[i]*Vec_Fsc_qs[j]*Gamma*Vec_cqs)* (EV/Angstrom**3)*(THz) # RTA np.sum(Vec_cqs*Vec_vqs[i]*Vec_vqs[j]*Vec_tau_qs)* (EV/Angstrom**3)*(Angstrom*THz*Angstrom) #
             kappa_cvF[i,j] = np.sum(Vec_vFqs[i,j]*Vec_cqs)* (EV/Angstrom**3)*(Angstrom**2*THz)
             kappa_cvF[j,i] = kappa_cvF[i,j]
+            kappa_qs_eV[i,j] = Vec_vFqs[i,j]*Vec_cqs
+            kappa_qs_eV[j,i] = kappa_qs_eV[i,j]
+            
             
     kappa_cvF = symmetrize_kappa(kappa_cvF, phonon)
     
     if Gamma_cut == False:
-        return qpoints_full,Vec_freqs,Vec_cqs,Vec_vqs,Vec_Fsc_qs,Vec_tausc_qs,Vec_tauNsc_qs,Vec_tauRsc_qs,kappa_cvF,Nratio_qs 
+        return qpoints_full,Vec_freqs,Vec_cqs,Vec_vqs,Vec_Fsc_qs,Vec_tausc_qs,Vec_tauNsc_qs,Vec_tauRsc_qs,kappa_cvF,kappa_qs_eV,Nratio_qs 
     else:
-        return qpoints_full,Vec_freqs[3:],Vec_cqs[3:],Vec_vqs[:,3:],Vec_Fsc_qs[:,3:],Vec_tausc_qs[3:],Vec_tauNsc_qs[3:],Vec_tauRsc_qs[3:],kappa_cvF,Nratio_qs[3:] # when using the full scatt matrix, remove the 0,1,2 th modes.
+        return qpoints_full,Vec_freqs[3:],Vec_cqs[3:],Vec_vqs[:,3:],Vec_Fsc_qs[:,3:],Vec_tausc_qs[3:],Vec_tauNsc_qs[3:],Vec_tauRsc_qs[3:],kappa_cvF,kappa_qs_eV[:,:,3:],Nratio_qs[3:] # when using the full scatt matrix, remove the 0,1,2 th modes.
 
 # --------------------------------------- Compute thermal conductivity from modal properties --------------------------------------------# 
 
@@ -1128,13 +1289,14 @@ def Solve1D_TempRN_udrift(XIx,OMEGAH,Vec_cqs,Vec_freqs,Vec_Fsc_qs,Vec_tauN_qs,Ve
             #rot_Fs_mz = np.array((rot_Fs[0],rot_Fs[1],-rot_Fs[2]))
             
             
-            # X_modes_at_rotqpos = X1D_modes_at_q(XIx,OMEGAH,rot_Fs,taus_at_q, ix,Xdtype) 
-            # X_modes_at_rotqneg = X1D_modes_at_q(XIx,OMEGAH,-rot_Fs,taus_at_q, ix,Xdtype) 
+            X_modes_at_rotqpos,Xq_modes_at_q_pos = X1D_modes_at_q(XIx,OMEGAH,rot_Fs,taus_at_q, ix,Xdtype) 
+            X_modes_at_rotqneg,Xq_modes_at_q_neg = X1D_modes_at_q(XIx,OMEGAH,-rot_Fs,taus_at_q, ix,Xdtype) 
             
+            X_modes_at_rotq = (X_modes_at_rotqpos+X_modes_at_rotqneg)/2.
 
             # symmetrized using in-plane isotropy
-            X_modes_at_rotq,Xq_modes_at_q_pos = X1Diso_modes_at_q(XIx, OMEGAH, rot_Fs, taus_at_q,Xdtype=Xdtype) #0.5*(X_modes_at_rotqpos+X_modes_at_rotqneg)  
-            X_modes_at_rotq,Xq_modes_at_q_neg = X1Diso_modes_at_q(-XIx, OMEGAH, rot_Fs, taus_at_q,Xdtype=Xdtype)
+            # X_modes_at_rotq,Xq_modes_at_q_pos = X1Diso_modes_at_q(XIx, OMEGAH, rot_Fs, taus_at_q,Xdtype=Xdtype) #0.5*(X_modes_at_rotqpos+X_modes_at_rotqneg)  
+            # X_modes_at_rotq,Xq_modes_at_q_neg = X1Diso_modes_at_q(-XIx, OMEGAH, rot_Fs, taus_at_q,Xdtype=Xdtype)
             
             # the first return is even.
                        
@@ -2097,7 +2259,7 @@ def get_secsound_dispersion(k,alpha,eta,v0,gamma,lowOrder=True):
     return omega_plus,omega_minus,vss
 
 
-def get_momentum_transCoeffs(kvec,Vec_cqs,Vec_vqs,Vec_FA_qs,Vec_freqs,Vec_tau_qs,Vec_tauR_qs,Vec_tauN_qs,Nratio_qs,phonon,rots_qpoints,axis=0):
+def get_momentum_transCoeffs(kvec,Vec_cqs,Vec_vqs,kappa_axis_qs,Vec_FA_qs,Vec_freqs,Vec_tau_qs,Vec_tauR_qs,Vec_tauN_qs,Nratio_qs,phonon,rots_qpoints,axis=0):
     # calculate second sound velocity in Angstrom*THz = 100 m/s
     # kvec in Angstrom
     eps = 1e-50
@@ -2109,8 +2271,7 @@ def get_momentum_transCoeffs(kvec,Vec_cqs,Vec_vqs,Vec_FA_qs,Vec_freqs,Vec_tau_qs
     #convert = (EV/Angstrom**3)*(Angstrom**2*THz)
     #kappa = kappa_cvF[axis,axis] / convert # in EV*THz/Angstrom/K
     
-    kappa_qs = Vec_cqs*Vec_vqs[axis]*Vec_FA_qs[axis] # EV*THz/Angstrom
-    
+
     #Kn = np.outer(kvec,Vec_FA_qs[axis]) # (Nkvec, Nqs)
     #SuppFunc = 1/(1+Kn**2) # suppression function
     
@@ -2158,10 +2319,10 @@ def get_momentum_transCoeffs(kvec,Vec_cqs,Vec_vqs,Vec_FA_qs,Vec_freqs,Vec_tau_qs
             
             fac_N = Nratios_at_q*(2-Nratios_at_q)
 
-            Pi += np.matmul(SuppFuncS_at_rotq,Nratios_at_q*cs_at_q*rot_q[axis]*rot_vs[axis]/omegas_at_q)/multi_q
+            Pi += np.matmul(SuppFuncS_at_rotq,cs_at_q*rot_q[axis]*rot_Fs[axis]/omegas_at_q/tauNs_at_q)/multi_q
             A += np.matmul(SuppFuncS_at_rotq,fac_N*cs_at_q*rot_q[axis]**2/omegas_at_q**2)/multi_q
             
-            M  += np.matmul(SuppFuncS_at_rotq,Nratios_at_q*cs_at_q*rot_q[axis]**2/omegas_at_q**2*rot_vs[axis]*rot_Fs[axis])/multi_q
+            M  += np.matmul(SuppFuncS_at_rotq,cs_at_q*rot_q[axis]**2/omegas_at_q**2*rot_vs[axis]*rot_Fs[axis]/tauNs_at_q)/multi_q
             sum_G_rotq =cs_at_q*(rot_q[axis]**2)/(omegas_at_q**2)*Nratios_at_q/tauRs_at_q/multi_q
             
             Gamma += np.matmul(SuppFuncS_at_rotq,sum_G_rotq)
@@ -2169,12 +2330,8 @@ def get_momentum_transCoeffs(kvec,Vec_cqs,Vec_vqs,Vec_FA_qs,Vec_freqs,Vec_tau_qs
             
         
         SuppFuncS[:,iq*Ns:(iq+1)*Ns] = SuppFuncS_at_q
-        
-        
-        
-        
-        
-    kappa = np.matmul(SuppFuncS,kappa_qs)
+    
+    kappa = np.matmul(SuppFuncS,kappa_axis_qs)
     
     
             
